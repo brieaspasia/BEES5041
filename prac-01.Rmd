@@ -83,7 +83,7 @@ sqrt(pop_var50)
   
   mean(Sample50$Size) + (qt(0.975, df = 19)) * sd(Sample50$Size/sqrt(50))
 ```
-```{r t-tests}
+```{r t-test-pH}
 #pH levels of a new stream 
 pH <- c(7.9, 7.1, 7.0, 7.2, 7.8, 8.1, 8.0, 7.7, 7.9, 7.5)
 mean(pH)
@@ -91,7 +91,9 @@ mean(pH)
 #from data to test statistic (a measure of your differences and variation)
 #test statistic = mean of sample - mean of other stream / sd of sample / sqrt (sample size)
 my.t <- (mean(pH) - 7.5)/(sd(pH)/sqrt(length(pH)))
-my.t #0.9566892
+my.t #0.9566892 (0.957)
+
+#critical value of t is 2.26, our difference wasn't as big as the difference that would be associated with 0.05
 
 #probability associated with that test statistic 
 #(likelihood of your value if the null hypothesis was true)
@@ -99,10 +101,10 @@ pt(my.t, df = 9, lower.tail = FALSE)*2 #0.363715
 
 t.test(pH, alternative = "two.sided", mu = 7.5)
 
-#Null hypothesis is rejected, but the mean of the new stream is within the confint????
+#Null hypothesis is rejected, but the mean of the new stream is within the confint????  **Null hypothesis is not actually rejected?**  About 1/3 of samples within that catchment would be around my result.
 ```
 
-```{r load-corn}
+```{r two-sided-t-corn}
 #read data
 Corn <- read.csv(file = "data/prac-01/Corn.csv", header = T)
 
@@ -130,7 +132,6 @@ mean(Lead) - (qt(0.975, df = 9)) * sd(Lead/sqrt(10)) #230.0936
 t.test(Lead, mu = 300)
 
 #why is p-value incorrect???
-
 ```
 
 ```{r acid-sulphate}
@@ -145,7 +146,7 @@ t.test(pH~Treatment, #pH described by treatment
        data = AS, alternative = "two.sided", 
        var.equal = TRUE)
 ```
-```{r glyphosphate}
+```{r one-sample-glyphosphate}
 glyp <- c(874, 745, 1002, 554, 837, 901, 845, 912, 698, 712)
 
 mean(glyp) #mean is 808
