@@ -1,0 +1,288 @@
+---
+title: "prac-01"
+author: "Brie Sherow"
+date: "15/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-libraries}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r load-data}
+Population <- read.csv(file = "data/prac-01/Population.csv", header = T)
+```
+
+```{r histogram}
+#mean of population sizes
+mean(Population$Size)
+
+#population variance
+pop_var <- mean(Population$Size - mean(Population$Size))^2
+pop_var
+
+#standard deviation
+sqrt(pop_var)
+
+#histogram of population sizes
+ggplot(Population, aes(Size)) + geom_histogram()
+```
+```{r subset}
+
+#subset of n random sizes
+Sample5 <- sample_n(Population, 5)
+mean(Sample5$Size)
+pop_var5 <- mean(Sample5$Size - mean(Sample5$Size))^2
+pop_var5
+sqrt(pop_var5)
+
+Sample10 <- sample_n(Population, 10)
+mean(Sample10$Size)
+pop_var10 <- mean(Sample10$Size - mean(Sample10$Size))^2
+pop_var10
+sqrt(pop_var10)
+
+Sample20 <- sample_n(Population, 20)
+mean(Sample20$Size)
+pop_var20 <- mean(Sample20$Size - mean(Sample20$Size))^2
+pop_var20
+sqrt(pop_var20)
+
+Sample50 <- sample_n(Population, 50)
+mean(Sample50$Size)
+pop_var50 <- mean(Sample50$Size - mean(Sample50$Size))^2
+pop_var50
+sqrt(pop_var50)
+```
+```{r confint}
+#lower and upper confidence intervals
+
+  #subset of 5
+  mean(Sample5$Size) - (qt(0.975, df = 4)) * sd(Sample5$Size/sqrt(5))
+  
+  mean(Sample5$Size) + (qt(0.975, df = 4)) * sd(Sample5$Size/sqrt(5))
+  
+  #subset of 10
+  mean(Sample10$Size) - (qt(0.975, df = 9)) * sd(Sample10$Size/sqrt(10))
+  
+  mean(Sample10$Size) + (qt(0.975, df = 9)) * sd(Sample10$Size/sqrt(10))
+  
+  #subset of 20
+  mean(Sample20$Size) - (qt(0.975, df = 19)) * sd(Sample20$Size/sqrt(20))
+  
+  mean(Sample20$Size) + (qt(0.975, df = 19)) * sd(Sample20$Size/sqrt(20))
+  
+  #subset of 50
+  mean(Sample50$Size) - (qt(0.975, df = 19)) * sd(Sample50$Size/sqrt(50))
+  
+  mean(Sample50$Size) + (qt(0.975, df = 19)) * sd(Sample50$Size/sqrt(50))
+```
+```{r t-tests}
+#pH levels of a new stream 
+pH <- c(7.9, 7.1, 7.0, 7.2, 7.8, 8.1, 8.0, 7.7, 7.9, 7.5)
+mean(pH)
+
+#from data to test statistic (a measure of your differences and variation)
+#test statistic = mean of sample - mean of other stream / sd of sample / sqrt (sample size)
+my.t <- (mean(pH) - 7.5)/(sd(pH)/sqrt(length(pH)))
+my.t #0.9566892
+
+#probability associated with that test statistic 
+#(likelihood of your value if the null hypothesis was true)
+pt(my.t, df = 9, lower.tail = FALSE)*2 #0.363715
+
+t.test(pH, alternative = "two.sided", mu = 7.5)
+
+#Null hypothesis is rejected, but the mean of the new stream is within the confint????
+```
+
+```{r load-corn}
+#read data
+Corn <- read.csv(file = "data/prac-01/Corn.csv", header = T)
+
+#boxplot 
+ggplot(Corn, aes(Treatment, Mass)) + geom_boxplot()
+
+#contrast corn samples
+t.test(Mass~Treatment, #mass described by treatment
+       data = Corn, alternative = "two.sided", 
+       var.equal = TRUE)
+
+#df value is the degrees of freedom (n-1)
+```
+##Why is p-value incorrect?
+```{r lead}
+Lead <- c(225, 341, 240, 234, 270, 334, 330, 248, 169, 336)
+
+mean(Lead)
+
+#confidence interval
+mean(Lead) - (qt(0.975, df = 9)) * sd(Lead/sqrt(10)) #230.0936
+
+
+#one sample t-test (data must be a vector), concentrations of lead should not exceed 300
+t.test(Lead, mu = 300)
+
+#why is p-value incorrect???
+
+```
+
+```{r acid-sulphate}
+#read data
+AS <- read.csv(file = "data/prac-01/AcidSulphate.csv", header = T)
+
+#boxplot 
+ggplot(AS, aes(Treatment, pH)) + geom_boxplot()
+
+#contrast corn samples
+t.test(pH~Treatment, #pH described by treatment
+       data = AS, alternative = "two.sided", 
+       var.equal = TRUE)
+```
+```{r glyphosphate}
+glyp <- c(874, 745, 1002, 554, 837, 901, 845, 912, 698, 712)
+
+mean(glyp) #mean is 808
+
+#confidence interval
+mean(glyp) - (qt(0.975, df = 9)) * sd(Lead/sqrt(10)) #765.3936
+
+
+#one sample t-test (data must be a vector), concentrations of lead should not exceed 300
+t.test(glyp, mu = 670)
+
+#null hypothesis is rejected
+```
+```{r two-sample-kangaroos}
+	
+#read data
+kanga <- read.csv(file = "data/prac-01/kangaroos.csv", header = T,
+                  fileEncoding="UTF-8-BOM")
+
+#boxplot 
+ggplot(kanga, aes(salinity, pop)) + geom_boxplot()
+
+#contrast corn samples
+t.test(pop~salinity, #mass described by treatment
+       data = kanga, alternative = "two.sided", 
+       var.equal = TRUE)
+
+```
+#how many samples do you need for independent samples ttest?
+```{r paired-samples-nitrogen}
+#testing nitrogen with a new sampling device
+new <- c(101, 123, 98, 87, 110, 135, 140, 148, 112, 65)
+
+#those same samples tested with the old device
+old <- c(104, 125, 99, 86, 109, 138, 140, 147, 116, 66)
+
+#data points are not independent so the problem is avoided by turning each pair of related measurements into a set of differences that are all independent of each other.
+pair.diff <- new - old
+
+#calculate the mean and se of the differences
+diff.mean <- mean(pair.diff)
+
+diff.se <- sd(pair.diff)/sqrt(10)
+
+#calculate the test statistic
+soil.t <- abs(diff.mean/diff.se)
+
+soil.t
+
+#calculate p-value
+pt(soil.t, df = 9, lower.tail=FALSE)*2 #0.09320637
+
+SoilN <- read.csv(file = "data/prac-01/SoilN.csv", header = T)
+
+t.test(Nitrogen ~ Machine, data = SoilN, paired = TRUE)
+
+#boxplot 
+ggplot(SoilN, aes(Machine, Nitrogen)) + geom_boxplot()
+```
+##Why do we need sqrt and log values of temp?  are the results of independet ttest correct?
+```{r abnormal-dist-lizards}
+
+#load data
+Lizard_distribution <- read.csv(file = "data/prac-01/Lizards.csv", header = T)
+
+#is the data normally distributed?
+ggplot(Lizard_distribution, aes(Temperature)) + geom_histogram()
+
+#is the variance similar between two samples?
+ggplot(Lizard_distribution, aes(Lizard,Temperature)) + geom_boxplot()
+
+#make sure there are no negative or zero values
+Lizard_distribution <- mutate(Lizard_distribution, 
+                              sqrtTemp = sqrt(Temperature),
+                              logTemp = log(Temperature))
+
+#is the data normally distributed?
+ggplot(Lizard_distribution, aes(sqrtTemp)) + geom_histogram()
+ggplot(Lizard_distribution, aes(logTemp)) + geom_histogram()
+
+#is the variance similar between two samples?
+ggplot(Lizard_distribution, aes(Lizard,sqrtTemp)) + geom_boxplot()
+ggplot(Lizard_distribution, aes(Lizard,logTemp)) + geom_boxplot()
+
+t.test(logTemp ~ Lizard, data = Lizard_distribution, paired = TRUE)
+```
+```{r goodness-of-fit-finches}
+
+black <- (70*150)/100 #pop of sample should be 105
+yellow <- (1*150)/100 #pop of sample should be 1.5
+red <- (29*150)/100 #pop of sample should be 43.5
+
+pchisq(9.633, df=2, lower.tail = FALSE)
+
+chisq.test(x = c(96, 49, 5), p = c(0.7, 0.29, 0.01)) # ignore the warning sign
+
+#testing whether 30 males and 19 females is significant
+chisq.test(x = c(35, 14), p = c(0.5,0.5))
+
+pchisq(2.4694, df=1, lower.tail = FALSE)
+```
+```{r contingency-drains}
+Drain <- matrix(c(12,12,14,10,21,3), nrow=2)
+
+Drain
+
+chisq.test(Drain, correct=F)
+```
+##Soooo....  is the p-value is not significant, so that means that we can't reject the null hypothesis that claw side doesn't matter for fight duration?  So claw side does or doesn't matter?
+```{r paired-samples-crab}
+#load crab
+crab <- read.csv(file="data/prac-01/crab.csv", header=T)
+
+t.test(Duration ~ Side, data = crab, paired = TRUE)
+
+#boxplot 
+ggplot(crab, aes(Side, Duration)) + geom_boxplot()
+
+
+```
+```{r goodness-of-fit-soccer}
+right <- (122*311)/100 #pop of sample should be 379.42
+centre <- (89*311)/100 #pop of sample should be 276.79
+left <- (100*311)/100 #pop of sample should be 311
+
+black <- (70*150)/100 #pop of sample should be 105
+yellow <- (1*150)/100 #pop of sample should be 1.5
+red <- (29*150)/100 #pop of sample should be 43.5
+
+pchisq(9.633, df=2, lower.tail = FALSE)
+
+chisq.test(x = c(96, 49, 5), p = c(0.7, 0.29, 0.01)) # ignore the warning sign
+
+#testing whether 30 males and 19 females is significant
+chisq.test(x = c(35, 14), p = c(0.5,0.5))
+
+pchisq(2.4694, df=1, lower.tail = FALSE)
+```
+
+
