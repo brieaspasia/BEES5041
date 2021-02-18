@@ -13,18 +13,19 @@ knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
 library(dplyr)
 library(tidyverse)
+library(pwr)
 ```
 
-```{r load-data}
+##Q1 samples and populations
+
+```{r histogram-mean}
 Population <- read.csv(file = "data/prac-01/Population.csv", header = T)
-```
 
-```{r histogram}
 #mean of population sizes
 mean(Population$Size)
 
 #population variance
-pop_var <- mean(Population$Size - mean(Population$Size))^2
+pop_var <- mean((Population$Size - mean(Population$Size))^2)
 pop_var
 
 #standard deviation
@@ -33,6 +34,8 @@ sqrt(pop_var)
 #histogram of population sizes
 ggplot(Population, aes(Size)) + geom_histogram()
 ```
+
+
 ```{r subset}
 
 #subset of n random sizes
@@ -60,6 +63,8 @@ pop_var50 <- mean(Sample50$Size - mean(Sample50$Size))^2
 pop_var50
 sqrt(pop_var50)
 ```
+
+##Q2 confidence intervals
 ```{r confint}
 #lower and upper confidence intervals
 
@@ -83,7 +88,9 @@ sqrt(pop_var50)
   
   mean(Sample50$Size) + (qt(0.975, df = 19)) * sd(Sample50$Size/sqrt(50))
 ```
-```{r t-test-pH}
+
+##Q3 one sample t-test
+```{r pH}
 #pH levels of a new stream 
 pH <- c(7.9, 7.1, 7.0, 7.2, 7.8, 8.1, 8.0, 7.7, 7.9, 7.5)
 mean(pH)
@@ -103,8 +110,8 @@ t.test(pH, alternative = "two.sided", mu = 7.5)
 
 #Null hypothesis is rejected, but the mean of the new stream is within the confint????  **Null hypothesis is not actually rejected?**  About 1/3 of samples within that catchment would be around my result.
 ```
-
-```{r two-sided-t-corn}
+##Q4 independent samples t-test
+```{r corn}
 #read data
 Corn <- read.csv(file = "data/prac-01/Corn.csv", header = T)
 
@@ -118,14 +125,14 @@ t.test(Mass~Treatment, #mass described by treatment
 
 #df value is the degrees of freedom (n-1)
 ```
-##Why is p-value incorrect?
+##Q15 one sample t-test - Why is p-value incorrect?
 ```{r lead}
 Lead <- c(225, 341, 240, 234, 270, 334, 330, 248, 169, 336)
 
 mean(Lead)
 
 #confidence interval
-mean(Lead) - (qt(0.975, df = 9)) * sd(Lead/sqrt(10)) #230.0936
+mean(Lead) - (qt(0.975, df = 9)) * sd(Lead/sqrt(10)) 
 
 
 #one sample t-test (data must be a vector), concentrations of lead should not exceed 300
@@ -133,7 +140,7 @@ t.test(Lead, mu = 300)
 
 #why is p-value incorrect???
 ```
-
+##Q17 two samples t-test
 ```{r acid-sulphate}
 #read data
 AS <- read.csv(file = "data/prac-01/AcidSulphate.csv", header = T)
@@ -146,7 +153,9 @@ t.test(pH~Treatment, #pH described by treatment
        data = AS, alternative = "two.sided", 
        var.equal = TRUE)
 ```
-```{r one-sample-glyphosphate}
+
+##Q18 one sample t-test
+```{r glyphosphate}
 glyp <- c(874, 745, 1002, 554, 837, 901, 845, 912, 698, 712)
 
 mean(glyp) #mean is 808
@@ -160,7 +169,9 @@ t.test(glyp, mu = 670)
 
 #null hypothesis is rejected
 ```
-```{r two-sample-kangaroos}
+
+##Q21 two sample t-test
+```{r kangaroos}
 	
 #read data
 kanga <- read.csv(file = "data/prac-01/kangaroos.csv", header = T,
@@ -175,8 +186,8 @@ t.test(pop~salinity, #mass described by treatment
        var.equal = TRUE)
 
 ```
-#how many samples do you need for independent samples ttest?
-```{r paired-samples-nitrogen}
+#Q22 paired samples t-test - how to run the power analysis?
+```{r nitrogen}
 #testing nitrogen with a new sampling device
 new <- c(101, 123, 98, 87, 110, 135, 140, 148, 112, 65)
 
@@ -190,6 +201,8 @@ pair.diff <- new - old
 diff.mean <- mean(pair.diff)
 
 diff.se <- sd(pair.diff)/sqrt(10)
+
+sd(pair.diff)
 
 #calculate the test statistic
 soil.t <- abs(diff.mean/diff.se)
@@ -205,8 +218,13 @@ t.test(Nitrogen ~ Machine, data = SoilN, paired = TRUE)
 
 #boxplot 
 ggplot(SoilN, aes(Machine, Nitrogen)) + geom_boxplot()
+
+#calculate the power analysis to find out how many sample sizes we'd need in an independent samples t-test
+pwr.t.test(n = 10, d = 1.852926, sig.level = NULL, power = 0.80, type = c("two.sample"))
+
+
 ```
-##Why do we need sqrt and log values of temp?  are the results of independet ttest correct?
+##Q25 transformations: Why do we need sqrt and log values of temp?  are the results of independet ttest correct?
 ```{r abnormal-dist-lizards}
 
 #load data
@@ -233,7 +251,8 @@ ggplot(Lizard_distribution, aes(Lizard,logTemp)) + geom_boxplot()
 
 t.test(logTemp ~ Lizard, data = Lizard_distribution, paired = TRUE)
 ```
-```{r goodness-of-fit-finches}
+##Q28 goodness of fit
+```{r finches}
 
 black <- (70*150)/100 #pop of sample should be 105
 yellow <- (1*150)/100 #pop of sample should be 1.5
@@ -248,15 +267,17 @@ chisq.test(x = c(35, 14), p = c(0.5,0.5))
 
 pchisq(2.4694, df=1, lower.tail = FALSE)
 ```
-```{r contingency-drains}
+
+##Q32 contingency tables
+```{r drains}
 Drain <- matrix(c(12,12,14,10,21,3), nrow=2)
 
 Drain
 
 chisq.test(Drain, correct=F)
 ```
-##Soooo....  is the p-value is not significant, so that means that we can't reject the null hypothesis that claw side doesn't matter for fight duration?  So claw side does or doesn't matter?
-```{r paired-samples-crab}
+##Q36 paired t-test 
+```{r crab}
 #load crab
 crab <- read.csv(file="data/prac-01/crab.csv", header=T)
 
@@ -265,25 +286,74 @@ t.test(Duration ~ Side, data = crab, paired = TRUE)
 #boxplot 
 ggplot(crab, aes(Side, Duration)) + geom_boxplot()
 
-
+#The p-value is significant at 0.02, so we can reject the null hypothesis (fights between males with claws on the same side last longer than those between males with claws on opposite sides), and determine that fights between males with claws on the opposite sides last longer.  BUT this is not what the data shows??
 ```
-```{r goodness-of-fit-soccer}
-right <- (122*311)/100 #pop of sample should be 379.42
-centre <- (89*311)/100 #pop of sample should be 276.79
-left <- (100*311)/100 #pop of sample should be 311
+##Q37 goodness of fit - how to calculate the test statistic?
+```{r soccer}
 
-black <- (70*150)/100 #pop of sample should be 105
-yellow <- (1*150)/100 #pop of sample should be 1.5
-red <- (29*150)/100 #pop of sample should be 43.5
+#probabilities
+100*100/311  # 32.15 left kicks
+89*100/311  # 28.62 centre kicks
+122*100/311  # 39.23 right kicks
 
 pchisq(9.633, df=2, lower.tail = FALSE)
 
-chisq.test(x = c(96, 49, 5), p = c(0.7, 0.29, 0.01)) # ignore the warning sign
+pchisq(83.67, df=2 ,lower.tail = FALSE)
 
-#testing whether 30 males and 19 females is significant
-chisq.test(x = c(35, 14), p = c(0.5,0.5))
+chisq.test(x = c(153, 20, 138), p = c(.3215, .2862, .3923)) 
 
-pchisq(2.4694, df=1, lower.tail = FALSE)
+
+```
+##Q39 contingency table
+```{r gecko}
+gecko <- matrix(c(8,7,18,24,19,16,15,15,18,22,12,6), nrow=4)
+
+rownames(gecko) <- c("House gecko", "Barking gecko", "Snow skink", "Water skink")
+colnames(gecko) <- c("Sand", "Leaf litter", "Rock")
+
+chisq.test(gecko, correct = F)
+
+#checking which combination of lizard species and habitat type show the greatest deviation from expected under null (no association between species and habitat type)
+chisq.test(gecko)$residuals 
 ```
 
+##Q41 goodness of fit
+```{r windfarms}
+
+windfarm <- data.frame(c(12,33,59))
+
+colnames(windfarm) <- c("Number")
+rownames(windfarm) <- c("Small", "Medium", "Large")
+
+chisq.test(x = c(12,22,59), p = c(.33, .33, .34))
+
+chisq.test(x = c(12,22,59), p = c(.33, .33, .34))$expected
+
+
+```
+##Q43 contingency table
+```{r opals}
+opals <- matrix(c(35, 47, 18, 5, 7, 8), nrow=2)
+
+colnames(opals) <- c("Black", "Dark", "Light")
+rownames(opals) <- c("NSW", "Queensland")
+
+a = chisq.test(opals)
+
+chisq.test(opals)$residuals
+
+pchisq(opals, df=1,lower.tail = FALSE)
+```
+##Q45 paired t-test
+```{r cows}
+#load crab
+cows <- read.csv(file="data/prac-01/cows.csv", header=T)
+
+#boxplot 
+ggplot(cows, aes(copper, metals)) + geom_boxplot()
+
+t.test(copper ~ metals, data = cows, paired = TRUE)
+
+
+```
 
