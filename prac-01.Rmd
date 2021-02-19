@@ -346,14 +346,13 @@ pchisq(opals, df=1,lower.tail = FALSE)
 ```
 ##Q45 paired t-test
 ```{r cows}
-#load crab
+#load cows
 cows <- read.csv(file="data/prac-01/cows.csv", header=T)
 
 #boxplot 
 ggplot(cows, aes(copper, metals)) + geom_boxplot()
 
 t.test(copper ~ metals, data = cows, paired = TRUE)
-
 
 ```
 ##Q47 goodness of fit
@@ -367,7 +366,11 @@ chisq.test(x = c(12,18,6,4), p = c(.25, .25, .25, .25))
 ```
 #Q49 paired t-test with two values?
 ```{r corals}
+#load corals
+corals <- read.csv(file="data/prac-01/corals.csv", header=T)
 
+#boxplot 
+ggplot(corals, aes(time, size, color=Treatment)) + geom_boxplot()
 ```
 
 
