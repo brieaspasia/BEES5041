@@ -224,7 +224,7 @@ pwr.t.test(n = 10, d = 1.852926, sig.level = NULL, power = 0.80, type = c("two.s
 
 
 ```
-##Q25 transformations: Why do we need sqrt and log values of temp?  are the results of independet ttest correct?
+##Q25 transformations
 ```{r abnormal-dist-lizards}
 
 #load data
@@ -290,8 +290,15 @@ ggplot(crab, aes(Side, Duration)) + geom_boxplot()
 ```
 ##Q37 goodness of fit - how to calculate the test statistic?
 ```{r soccer}
+#chi-squared = (observed - expected)^2 / expected
 
-#probabilities
+observed <- c(153,20,138)
+expected <- c(100,89,122)
+diff <- observed-expected
+
+chi = (diff)^2 / expected
+
+#expected
 100*100/311  # 32.15 left kicks
 89*100/311  # 28.62 centre kicks
 122*100/311  # 39.23 right kicks
@@ -385,21 +392,14 @@ t.test(growth~pH_Treatment, #growth described by treatment
 ##Q50 two sample t-test
 ```{r weeds}
 
-# weeds <- weeds %>%
-#   mutate(difference=after-before)
-
 before <- c(45, 37, 23, 12, 38, 24, 18, 5, 27, 8)
 after <- c(35, 38, 20, 11, 25, 12, 22, 8, 28, 12)
-
-#visualise the differences between the two measurements
-  #create a column for change
-  weeds <- weeds %>%
-    mutate(diff=after-before)
 
 #load weeds
 weeds <- read.csv(file="data/prac-01/weeds.csv", header=T)
 
 weeds_long <- gather(weeds, time, pct_weeds, Before:After, factor_key=TRUE)
+
 
   #boxplot
   ggplot(weeds_long, aes(time, pct_weeds)) + geom_boxplot()
@@ -417,5 +417,71 @@ koalas_chi <- chisq.test(x = c(8,14,2,7,24,1), p = c(.05,.25,.24,.31,.10,.05)) #
 
 koalas_chi$residuals
 ```
+#Notes
+
+### Finding the population variance
+  pop_var <- mean((Population$Size - mean(Population$Size))^2)
+        
+### Finding the standard deviation
+  standard deviation <- sqrt(pop_var)
+  standard_error <- sd(Population$Size) / sqrt(length(200))
+
+### Test statistic
+  sample mean - population mean / SE
+  standard_error <- sd(x) / sqrt(length(x))
+  my.t <- (mean(sample) - pop_mean)/(sd(sample)/sqrt(length(sample)))
+  
+### Assumptions of parametric tests
+    independence of replicate measures (an issue of experimental design)
+    errors that are normally distributed
+    when contrasting groups, homogeneity of variation
+  
+##One sample t-test (pH, lead, glyphosphate)
+  comparing one sample to a null hypothesis (everything is the same)
+  t.test(sample, alternative = "two.sided", mu = null_mean) 
+  
+##Independent samples t-test (corn, acid sulphate, kangaroos)
+  comparing two separate sets of samples with two different treatments
+  t.test(Measurement~Treatment, data = sample, alternative = "two.sided", var.equal = TRUE)
+
+##Paired samples t-test (nitrogen, crab)
+  comparing one set of samples with two separate treatments
+  pair.diff <- new - old
+  diff.mean <- mean(pair.diff)
+  diff.se <- sd(pair.diff)/sqrt(sample_size)
+  diff.mean <- mean(pair.diff)
+  t-statistic <- abs(diff.mean/diff.se)
+  pt(t-statistic, df, lower.tail=FALSE)*2
+  OR
+  t.test(Measurement ~ Treatment, data = sample, paired = TRUE)
+  
+##Transformations (lizards)
+  transform to log or sqrt scale to ensure normal distribution
+  data <- mutate(data, log = log(Measurement))
+  
+##Goodness of Fit test (finches, soccer)
+  using one categorical (rather than continuous) variable with chi-squared tests
+  chi-squared = (observed - expected)^2 / expected
+  pchisq(chi-squared, degrees_freedom, lower.tail = FALSE)
+  OR
+  chisq.test(x = c(observed list), p = c(probability of expected list))
+  
+##Contingency tables (drains)
+  using multiple categorical variables with chi-squared tests
+  expected values = column total * row total / grand total *** REVIEW THIS ***
+  chisq.test(sample, correct=F)
+        
+#Questions
+### What is the difference between SE, SD, and population variance? Why is SE and SD the same in this example?
+### Q15 I set the mu=300 because we don't want to exceed 300, but maybe this is why I have the wrong p=value because mu should be the null mean?  Would I need to find the confidence interval that is entirely under 300?
+### Q22 How many soil samples would be required if you wanted to conduct an independent samples t -test to test whether the two machines differed?  Is this to do with a power analysis (if so, how do you do one) or is this just suggesting to measure each sample once instead of twice?
+### Q29 I don't understand this equation.  What is the sigma?
+## Q34 I can't get the correct t-statistic or p-value using a calculator, I don't understand this
+## Q37 I don't know how you can find one chi-squared from three values from the equation?
+```{r}
+
+```
+
+
 
 
