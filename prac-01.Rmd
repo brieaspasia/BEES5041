@@ -136,7 +136,7 @@ mean(Lead) - (qt(0.975, df = 9)) * sd(Lead/sqrt(10))
 
 
 #one sample t-test (data must be a vector), concentrations of lead should not exceed 300
-t.test(Lead, mu = 300)
+t.test(Lead, mu=300, alternative = "greater")
 
 #why is p-value incorrect???
 ```
@@ -220,7 +220,16 @@ t.test(Nitrogen ~ Machine, data = SoilN, paired = TRUE)
 ggplot(SoilN, aes(Machine, Nitrogen)) + geom_boxplot()
 
 #calculate the power analysis to find out how many sample sizes we'd need in an independent samples t-test
-pwr.t.test(n = 10, d = 1.852926, sig.level = NULL, power = 0.80, type = c("two.sample"))
+pwr.t.test(n = 10, d = 1.1/1.852926, sig.level = 0.05, power = NULL, type = c("two.sample"))
+
+pwr.t.test(n = 50, d = 1.1/1.852926, sig.level = 0.05, power = NULL, type = c("two.sample"))
+
+pwr.t.test(n = NULL, d = 1.1/1.852926, sig.level = 0.05, power = 0.8, type = c("two.sample"))
+#46
+
+trt.effect <- 1.1
+
+sigma <- 1.852926
 
 
 ```
@@ -387,6 +396,10 @@ corals <- read.csv(file="data/prac-01/corals.csv", header=T)
 t.test(growth~pH_Treatment, #growth described by treatment
        data = corals, alternative = "two.sided", 
        var.equal = TRUE)
+
+#create a vector of low values, one sample t-tes
+
+t.test(low, mu=0)
 ```
 
 ##Q50 two sample t-test
@@ -472,8 +485,7 @@ koalas_chi$residuals
   chisq.test(sample, correct=F)
         
 #Questions
-### What is the difference between SE, SD, and population variance? Why is SE and SD the same in this example?
-### Q15 I set the mu=300 because we don't want to exceed 300, but maybe this is why I have the wrong p=value because mu should be the null mean?  Would I need to find the confidence interval that is entirely under 300?
+### What is the difference between SE, SD, and population variance? Why is SE and SD the same in this example
 ### Q22 How many soil samples would be required if you wanted to conduct an independent samples t -test to test whether the two machines differed?  Is this to do with a power analysis (if so, how do you do one) or is this just suggesting to measure each sample once instead of twice?
 ### Q29 I don't understand this equation.  What is the sigma?
 ## Q34 I can't get the correct t-statistic or p-value using a calculator, I don't understand this
