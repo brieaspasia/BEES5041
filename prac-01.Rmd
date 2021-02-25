@@ -306,6 +306,7 @@ expected <- c(100,89,122)
 diff <- observed-expected
 
 chi = (diff)^2 / expected
+chi
 
 #expected
 100*100/311  # 32.15 left kicks
@@ -397,7 +398,9 @@ t.test(growth~pH_Treatment, #growth described by treatment
        data = corals, alternative = "two.sided", 
        var.equal = TRUE)
 
-#create a vector of low values, one sample t-tes
+#create a vector of low values, one sample t-test
+
+low <- c(0.2, -0.2, 0.2, 0.1, -0.1)
 
 t.test(low, mu=0)
 ```

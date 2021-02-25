@@ -1,0 +1,116 @@
+---
+title: "Report2"
+author: "Brie Sherow"
+date: "25/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-libraries}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(pwr)
+library(kableExtra) #table layouts
+```
+
+```{r load-data}
+bird <- read.csv(file = "data/Waterbird.csv", header = T)
+```
+
+##Which wetlands have the most survey data available?  Make a table of the top 10 wetlands by number of observations.
+
+```{r}
+
+top_wetland <- bird %>%
+  count(Wetland) %>% #count the number of observations for each wetland
+  arrange(desc(n)) %>% #arrange with highest numbers at top
+  filter(Wetland != "Unnamed Wetlands") %>% #take out misc values
+  top_n(10) %>% #limit to 10 entries
+  kable("html", #clean up the table
+  col.names = c("Wetland", "Observations"), #rename columns
+  caption = "Most surveyed wetlands") %>% #table title
+  kable_styling(bootstrap_options="condensed", position="left") 
+
+top_wetland
+
+```
+
+```{r exploratory}
+top10 <- bird %>%
+  count(Wetland) %>% #count the number of observations for each wetland
+  arrange(desc(n)) %>% #arrange with highest numbers at top
+  filter(Wetland != "Unnamed Wetlands") %>% #take out misc values
+  top_n(10) #limit to 10 entries
+  
+top10 <- top10$Wetland
+
+topbirds <- bird %>%
+  count(Common.Name) %>% #count the number of observations for each wetland
+  arrange(desc(n)) %>% #arrange with highest numbers at top
+  filter(Common.Name != "Zero Count") %>% #take out misc values
+  top_n(10) #limit to 10 entries
+
+topbirds <- topbirds$Common.Name
+  
+t <- bird %>%
+  filter(Wetland %in% top10 & Common.Name %in% topbirds) %>%
+  group_by(Wetland, Year, Common.Name) %>%
+  summarise(sum=sum(Bird.Count)) %>%
+  arrange(desc(sum))
+
+t %>%
+  filter(Wetland == "Lake Moondarra") %>%
+  ggplot(aes(x=Year, y=sum, colour=Common.Name)) +
+  geom_line() +
+  scale_y_log10() +
+  facet_wrap(~Wetland)
+```
+
+
+
+##Which birds are most abundant in a single survey? Choose any one of these wetlands, summarise the number of birds seen for each species in a single year.
+
+```{r bird-abundance}
+
+bird_abund <- bird %>%
+  filter(Wetland == "Lower Lakes & Coorong" & Year == 2017) %>%
+  group_by(Common.Name) %>%
+  summarise(sum=sum(Bird.Count)) %>%
+  arrange(desc(sum))
+
+bird_abund
+
+```
+
+
+##Has the abundance of waterbirds declined across the years surveyed? For your chosen wetland, contrast total abundance of all species with year of the survey. 
+```{r population}
+
+bird_total <- bird %>%
+  filter(Wetland == "Lower Lakes & Coorong") %>%
+  group_by(Year) %>%
+  summarise(sum=sum(Bird.Count))
+
+bird_total
+
+ggplot(bird_total, aes(x=Year, y=sum)) +
+  geom_line()
+```
+
+##Is there evidence of a decline in abundance for a single species at a chosen wetland. Choose just one birds species to analyse.
+```{r}
+pel_abund <- bird %>%
+  filter(Wetland == "Lower Lakes & Coorong" & Common.Name=="Pelican") %>%
+  group_by(Year) %>%
+  summarise(sum=sum(Bird.Count))
+
+pel_abund
+
+ggplot(pel_abund, aes(x=Year, y=sum)) +
+  geom_line()
+```
+
