@@ -1,0 +1,50 @@
+---
+title: "LinearModels"
+author: "Brie Sherow"
+date: "06/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-libraries}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(pwr)
+```
+
+```{r insect-pop-temp}
+#population and temperature for four different insect groups
+Bug.pop <- read.csv(file = "data/Linear_models/InsectPopTemp.csv", header = TRUE)
+
+#testing linear model popn = a +b(Temp)
+popA.lm = lm(Popna ~ Tempa, data = Bug.pop) #population described by temperature
+popB.lm = lm(Popnb ~ Tempb, data = Bug.pop)
+popC.lm = lm(Popnc ~ Tempc, data = Bug.pop)
+popD.lm = lm(Popnd ~ Tempd, data = Bug.pop)
+
+#summaries
+summary(popA.lm)
+summary(popB.lm)
+summary(popC.lm)
+summary(popD.lm)
+
+#residual sum of squares
+sum(summary(popA.lm)$residuals^2)
+sum(summary(popB.lm)$residuals^2)
+sum(summary(popC.lm)$residuals^2)
+sum(summary(popD.lm)$residuals^2)
+
+#regression sum of squares
+sum((predict(popA.lm) - mean(Bug.pop$Popna))^2)
+sum((predict(popB.lm) - mean(Bug.pop$Popnb))^2)
+sum((predict(popC.lm) - mean(Bug.pop$Popnc))^2)
+sum((predict(popD.lm) - mean(Bug.pop$Popnd))^2)
+
+#calculate the 95% confidence interval for the slope parameter
+confint(popA.lm) #confint for the slope and intercept of the regression for popA
+```
+###Q3 What is meant by the fitted equation question?
