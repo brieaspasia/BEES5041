@@ -15,7 +15,9 @@ library(dplyr)
 library(tidyverse)
 library(pwr)
 ```
+#Linear models with continuous response and predictor variables
 
+##Q3 Interpreting linear models
 ```{r insect-pop-temp}
 #population and temperature for four different insect groups
 Bug.pop <- read.csv(file = "data/Linear_models/InsectPopTemp.csv", header = TRUE)
@@ -47,4 +49,238 @@ sum((predict(popD.lm) - mean(Bug.pop$Popnd))^2)
 #calculate the 95% confidence interval for the slope parameter
 confint(popA.lm) #confint for the slope and intercept of the regression for popA
 ```
-###Q3 What is meant by the fitted equation question?
+##Q10
+```{r swim-records}
+#winning times for 100m freestyle in women's olympics
+swim <- read.csv(file = "data/Linear_models/Swim.records.csv", header = TRUE)
+
+#plot the records
+ggplot(swim, aes(Year,Time)) + geom_point() + ylim(c(0,85))
+
+#find equation for the regression line
+swim.lm <- lm(Time ~ Year, data = swim)
+summary(swim.lm)
+
+#plot the line of best fit
+ggplot(swim, aes(Year,Time)) + geom_point() + ylim(c(0,85)) + geom_smooth(method="lm")
+
+#predict the time for the year 2020
+predict(swim.lm, list(Year = 2020))
+```
+##Q15 
+```{r UN-stats}
+#load life expectacy vs infant mortality data
+UN.pop <- read.csv(file = "data/Linear_models/Unpopstats.csv", header = TRUE)
+
+#subset female and male populations
+UN.pop.female <- filter(UN.pop, Gender == "female")
+UN.pop.male <- filter(UN.pop, Gender == "male")
+
+un.f.lm <- lm(formula = LifeExp ~ InfMort, data = UN.pop.female)
+summary(un.f.lm)
+
+un.m.lm <- lm(formula = LifeExp ~ InfMort, data = UN.pop.male)
+summary(un.m.lm)
+```
+##Q16
+```{r fire-management}
+#load red gum woody debris data
+debris <- read.csv(file = "data/Linear_models/coarsedebris.csv", header = TRUE)
+
+debris.lm <- lm(Debris ~ Tree.density, data=debris)
+summary(debris.lm)
+
+```
+##Q18
+```{r study-times}
+#load study times data
+study <- read.csv(file = "data/Linear_models/studyhours.csv", header = TRUE)
+
+study.lm <- lm(grade~hours, data=study)
+summary(study.lm)
+
+#predict the time for a perfect score
+predict(study.lm, list(grade = 100))
+
+100 = -8.554 + 11.384(hours)
+
+100+8.554 = 108.554
+
+108.554/11.384 = 9.535664
+
+```
+
+###Q3 Quiz 1 How are we meant to write this equation?  Is it not slope + intercept * Temp?  
+
+#Testing assumptions: Examining residuals to understand patterns of variation in lm
+
+#Q2
+```{r boiling-point}
+#read data
+hooker <- read.csv(file = "data/Linear_models/Hooker.csv", header = TRUE)
+
+#plot the line of best fit
+ggplot(hooker, aes(Temperature,Pressure)) + geom_point() +
+  geom_smooth(method="lm")
+
+#conduct regression analysis
+hooker.lm <- lm(Temperature~Pressure, data= hooker)
+plot(hooker.lm)
+
+#remove outliers does not make a difference
+hooker_no.outliers <- slice(hooker, -7)
+hooker.outlier.lm <- lm(Temperature~Pressure, data=hooker_no.outliers)
+plot(hooker.outlier.lm)
+summary(hooker.outlier.lm)
+
+hooker <- mutate(hooker, logTemp = log10(Temperature))
+hooker <- mutate(hooker, logPress = log10(Pressure))
+
+log.hooker.lm <- lm(logTemp ~ logPress, data=hooker)
+summary(log.hooker.lm)
+plot(log.hooker.lm)
+```
+
+#Q4
+```{r growth-vs-size}
+#read data
+growthrate <- read.csv(file = "data/Linear_models/GrowthRate.csv", header = TRUE)
+
+#plot the line of best fit
+ggplot(growthrate, aes(BodyWt, GrowthRate)) + geom_point() + geom_smooth(method="lm")
+
+growthrate <- mutate(growthrate, logBodyWt = log10(BodyWt))
+growthrate <- mutate(growthrate, sqrtBodyWt = sqrt(BodyWt))
+growthrate <- mutate(growthrate, logGrowthRate = log10(GrowthRate))
+growthrate <- mutate(growthrate, sqrtGrowthRate = sqrt(GrowthRate))
+
+#conduct regression analysis
+gr.lm <- lm(BodyWt~GrowthRate, data= growthrate)
+plot(gr.lm)
+
+log.gr.lm <- lm(logBodyWt~logGrowthRate, data= growthrate)
+plot(log.gr.lm)
+
+sqrt.gr.lm <- lm(sqrtBodyWt~sqrtGrowthRate, data= growthrate)
+plot(sqrt.gr.lm)
+summary(log.gr.lm)
+```
+#Q9
+```{r brain-size}
+#read data
+brain <- read.csv(file = "data/Linear_models/Brain.csv", header = TRUE)
+
+#plot the line of best fit
+ggplot(brain, aes(BrainWt, BodyWt)) + geom_point() + geom_smooth(method="lm")
+
+brain.lm <- lm(BrainWt~BodyWt, data=brain)
+summary(brain.lm)
+plot(brain.lm)
+
+brain <- mutate(brain, logBrainWt = log10(BrainWt))
+brain <- mutate(brain, logBodyWt = log10(BrainWt))
+
+log.brain.lm <- lm(logBrainWt~logBodyWt, data=brain)
+summary(log.brain.lm)
+plot(log.brain.lm)
+
+#plot the line of best fit
+ggplot(brain, aes(logBrainWt, logBodyWt)) + geom_point() + geom_smooth(method="lm")
+```
+#Q12
+```{r amphipod}
+#read data
+amphipod <- read.csv(file = "data/Linear_models/Amphipod_fecundity.csv", header = TRUE)
+
+
+ggplot(amphipod, aes(Length, Eggs)) + geom_point() + geom_smooth(method="lm")
+
+amphipod.lm <- lm(Eggs~Length, data=amphipod)
+plot(amphipod.lm) 
+hist(amphipod.lm$residuals)
+summary(amphipod.lm)
+
+# amphipod <- mutate(amphipod, logLength = log10(Length))
+# 
+# log.amphipod.lm <- lm(Eggs~logLength, data=amphipod)
+# plot(log.amphipod.lm) 
+# hist(log.amphipod.lm$residuals)
+# summary(log.amphipod.lm)
+
+#Length = intercept + slope(Eggs)
+
+#Length = -25.133 + 5.639(10)
+```
+#Q13
+```{r river-flow}
+river <- read.csv(file = "data/Linear_models/riverflow.csv", header = TRUE)
+
+ggplot(river, aes(Flow.rate, Larvae.density)) + geom_point() + geom_smooth(method="lm")
+
+river.lm <- lm(Larvae.density~Flow.rate, data=river)
+hist(river.lm$residuals)
+plot(river.lm)
+summary(river.lm)
+
+```
+
+#Q14
+```{r koalas}
+koalas <- read.csv(file = "data/Linear_models/koalas.csv", header = TRUE)
+
+koalas <- mutate(koalas, years.since.fire = 2021-Year.last.fire)
+
+ggplot(koalas, aes(years.since.fire, Koalas)) + geom_boxplot() 
+
+ggplot(koalas, aes(years.since.fire, Koalas)) +
+  geom_point() + geom_smooth(method="lm")
+
+koalas.lm <- lm(Koalas~years.since.fire, data=koalas)
+hist(koalas.lm$residuals)
+plot(koalas.lm)
+summary(koalas.lm)
+
+```
+
+###Still don't understand how to test the assumptions - how do you determine outliers or transformations?  
+
+#Linear models 2a
+```{r turtles}
+turtles <- read.csv(file = "data/Linear_models/Turtles.csv", header = TRUE)
+
+str(turtles)
+turtles$Temperature <- factor(turtles$Temperature)
+
+turtles.aov <- aov(Days ~ Temperature, data = turtles)
+summary(turtles.aov)
+
+#degrees of freedom is the number of levels of your factor -1
+# residual Df = a(n-1) where a is the number of levels of factor and n is sample size (replicates per level)
+
+turtles.lm <- lm(formula = Days ~ Temperature, data = turtles)
+summary(turtles.lm)
+
+#to determine p-value, use pf(q, df1, df2, lower.tail = FALSE) where q is the value of F, df1 is the degrees of freedom for the numerator (number of factor levels -1) and df2 is the degrees of freedom of the denominator (residual degrees of freedom)
+
+pf(15.98, 3, 36, lower.tail = FALSE)
+
+#a significant P value rejects the null hypothesis that hatching times are the same across all four temperatures, but does not identify which are different from each other.
+
+#checking normality
+hist(turtles.aov$residuals)
+
+#checking homogeneity of variance
+plot(turtles.aov)
+
+#checking data
+ggplot(turtles, aes(Temperature, Days)) + geom_boxplot()
+
+
+qtukey(0.95, #confint
+       4, #number of means
+       36) #residual degrees of freedom
+
+#critical value q for error rate of 0.05 is 3.808798
+
+TukeyHSD(turtles.aov)
+```
