@@ -284,3 +284,18 @@ qtukey(0.95, #confint
 
 TukeyHSD(turtles.aov)
 ```
+#Notes
+
+##ANOVA analysis of variance
+Grand mean, treatment mean of each group.  Among group variation - treatment and error. Within group variation - error. Total variation - within group variation + between group variation (Among group + within group variation).  Among group should be big and within group should be small. 
+
+1. Calculate the grand mean.
+2. Calculate each treatment mean.
+3. Calculate the within group sum of squares (error).
+4. Calculate df (number of measurements - number of groups)
+5. Calculate mean sum of squares (mean square / degrees of freedom).
+6. Calculate among group sum of squares (treatment + error).
+7. Calculate mean square (divide by degrees of freedom)
+8. Calculate F ratio (mean square treatment / mean square error)
+9. Look up the critical value for the F ratio and decide whether to reject the null hypothesis
+10. Can add error within group + error among group to get total sum of squares

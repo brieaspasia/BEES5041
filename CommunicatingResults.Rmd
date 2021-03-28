@@ -1,0 +1,32 @@
+---
+title: "Communicating Results"
+author: "Brie Sherow"
+date: "28/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-libraries}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(pwr)
+```
+
+
+```{r}
+TestPlot <- read.csv(file = "data/communicating_results/TestPlot.csv", header = T,
+                  fileEncoding="UTF-8-BOM")
+
+ggplot(TestPlot, aes(X,Y)) + geom_point()
+
+ggplot(TestPlot, aes(X,Y)) + geom_point() + xlab("Temperature (°C)") + ylab("Growth rate (cm/yr)")
+
+ggplot(TestPlot, aes(X,Y)) + geom_point() +
+  xlab("Temperature (°C)") + ylab("Growth rate (cm/yr)") +
+  xlim(0,30) + ylim(0,70)
+```
+

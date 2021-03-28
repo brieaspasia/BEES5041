@@ -495,14 +495,10 @@ koalas_chi$residuals
 ## Q37 I don't know how you can find one chi-squared from three values from the equation?
 ## Q41 test statistic is wrong, is it because of the probabilities?  I have them equal, cause that's the null?
 ## Q44 Null hypothesis was rejected, so the two states have different colours of opals. Q44 is not what we're testing, right?
-# Q45 How is the test statistic wrong?  And I don't understand how to improve the experiment...
+# Q45 How is the test statistic wrong?
 # Q49 Don't understand what test would test hypothesis that corals grow at a lower pH.
 # Q50 How is the test statistic wrong?
 # Q53 How could the test be improved?
-
-```{r}
-
-```
 
 
 
