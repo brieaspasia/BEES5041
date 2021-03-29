@@ -103,7 +103,7 @@ ggplot(bird_total, aes(x=Year, y=sum)) +
 ```
 
 ##Is there evidence of a decline in abundance for a single species at a chosen wetland. Choose just one birds species to analyse.
-```{r}
+```{r pelican-decline}
 pel_abund <- bird %>%
   filter(Wetland == "Lake Moondarra" & Common.Name=="Pelican") %>%
   group_by(Year) %>%
@@ -112,6 +112,11 @@ pel_abund <- bird %>%
 pel_abund
 
 ggplot(pel_abund, aes(x=Year, y=sum)) +
-  geom_line()
+  geom_point() + geom_smooth(method="lm")
+
+pel.lm <- lm(sum~Year, data=pel_abund)
+plot(pel.lm)
+summary(pel.lm)
+
 ```
 

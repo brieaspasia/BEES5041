@@ -1,0 +1,108 @@
+---
+title: "Multivariate"
+author: "Brie Sherow"
+date: "29/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-libraries}
+
+library(dplyr)
+library(ggplot2)
+library(vegan)
+```
+#1) Pearson correlation and euclidian distance
+```{r beaches}
+#load data
+beaches <- read.csv(file = "data/multivariate/Beaches.csv", header = TRUE)
+
+#Visualise the relationships among the variables with a scatter plot matrix.
+pairs(beaches)
+
+#Use the cor function to obtain the Pearson correlation coefficient:
+cor(beaches)
+
+#euclidian distance -- geographic of the numbers
+dist(t(beaches), method = "euclidean", diag = TRUE)
+```
+#4) Measure similarity and plot ordination
+
+```{r heavy-metals}
+#load data
+metals <- read.csv(file = "data/multivariate/HeavyMetals.csv", header = TRUE)  
+
+#create abundance matrix
+metals_vars <- dplyr::select(metals, -Site)
+
+#square root transform the data to reduce the influence of very large values
+metals.sq <- sqrt(metals_vars)
+
+#create similarity matrix using Euclidian distance
+metals.dis <- dist(metals.sq, method = "euclidean")
+
+#create a multi-dimensional scaling plot to visualise the differences among sites
+metals.mds <- metaMDS(metals.dis, 
+                      autotransform = FALSE, #do not transform the data further
+                      trace=FALSE) # no process details needed
+#view ord
+plot(metals.mds)
+
+#extract the x and y coordinates from the MDS object, add the site names from our original data set and plot with ggplot using our site labels rather than points.
+metals_xy <- data.frame(metals.mds$points)
+
+metals_xy$Site <- metals$Site
+
+ggplot(metals_xy, aes(MDS1, MDS2)) + geom_text(aes(label=Site))
+
+#Before we interpret the MDS plot, we should check the stress value.
+metals.mds$stress
+```
+#MDS Bray-Curtis
+```{r nutrients}
+#load data
+nutrients <- read.csv(file = "data/multivariate/NutrientEnrichment.csv", header = TRUE)
+
+#select only the abundance data
+nutrients_vars <- select(nutrients, contains("Weed"))
+
+#square root transform the data to reduce the influence of very large values
+nutrients.sq <- sqrt(nutrients_vars)
+
+#Bray-Curtis similarity coefficient is recommended for analyses that contrast the species composition of community data sets
+nutrients.mds <- metaMDS(nutrients.sq, distance = "bray", autotransform = FALSE, trace=FALSE)
+
+nutrients_xy <- data.frame(nutrients.mds$points)
+
+nutrients_xy$treatment <- nutrients$Treatment
+
+ggplot(nutrients_xy, aes(MDS1, MDS2, color = treatment)) + geom_point()
+```
+```{r maroubra-rockpools}
+#load data
+RockPools <- read.csv(file = "data/multivariate/Maroubra_rock_pools.csv", header = TRUE)
+
+#create abundance matrix
+RockPools_vars <- dplyr::select(RockPools, -X, -Habitat, - Year, -Replicate)
+
+#Some of the variables are % cover (the red, brown and green algae) and some are counts of individual animals. Clearly 100% cover is not equivalent to 100 snails, so we can standardise these variables to ensure each variable is on the same scale. We can use the function decostand from vegan to standardise each variable by the maximum value of that variable. We then end up with all variables having values between 0 and 1.
+Rock_pools_vars_std <- decostand(RockPools_vars, method= "max")
+
+#create MDS with Bray-Curtis for species composition community data
+rockpools.mds <- metaMDS(Rock_pools_vars_std, distance = "bray", autotransform = FALSE, trace=FALSE)
+
+rockpools_xy <- data.frame(rockpools.mds$points)
+
+rockpools_xy$habitat <- RockPools$Habitat
+
+rockpools_xy$year <- as.factor(RockPools$Year)
+
+ggplot(rockpools_xy, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point()
+
+ggplot(rockpools_xy, aes(MDS1, MDS2, color = year, shape=habitat)) + geom_point()
+```
+
+
