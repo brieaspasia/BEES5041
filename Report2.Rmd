@@ -77,6 +77,7 @@ plot16 <- moon16 %>% #read in target wetland/year df
 
 plot16
 ```
+
 ## Trends in waterbird abundance
 In order to determine trends in total waterbird abundance, I used a linear regression of sum of all waterbird observations predicted by year of survey. I checked assumptions using the plot function and found that residuals were evenly dispersed and followed the QQ-plot.
 
@@ -94,7 +95,9 @@ moon.lm <- lm(sum ~ Year, #sum predicted by year
 #checking assumptions
 plot(moon.lm)
 ```
+
 # Results
+
 
 ## Waterbird abundance at Lake Moondarra
 The abundance of waterbirds has been decreasing at Lake Moondarra across the years surveyed (F=5.33, R-squared=0.11, p=0.03). The results of this model are visualised , showing a steady decline.
@@ -121,8 +124,9 @@ tab_model(
           string.ci = "Conf. Int (95%)"
 )
 ```
+
 ## Pelican abundance at Lake Moondarra
-The above model does not take into consideration variability between species, but rather looks at waterbirds in general. I've chosen to analyse Pelicans specifically, as they are a charismatic species with high observation count in the previous figure and whose population is not endangered at a species level.
+The above model does not take into consideration variability between species, but rather looks at waterbirds in general. I've chosen to analyse Pelicans specifically, as they are a charismatic species with a high observation count in the previous figure and whose population is not endangered at a species level. 
 ```{r cute-pelicans, fig.cap="Cute Pelicans. Source: centralcoast.nsw.govt.au", out.width = '50%'}
 knitr::include_graphics("data/pelicans.JPG")
 ```
@@ -166,18 +170,10 @@ tab_model(
 # confint(pel.lm) #intervals for the slope do not include 0
 # predict(pel.lm, list(Year = 2035)) #2035 is the last predicted year for pelican population given the current rate of decline
 ```
+
 # Conclusion
 
- While waterbird populations are currently healthy at Lake Moondarra observation data over the past 35 years shows a steady decline in abundance. While further research is needed to determine the causes of this decline, the waterbird populations can be an indicator of stress to the ecosystem as a whole.
-
-Marking: 
-a)Notes to introduce the question and detail the hypotheses being tested (10marks)
-b)Notes and code to load any R packages that you will require (5 marks)
-c)Notes and code to import the data set (5 marks)
-d)Notes and code to create a graph that can visualise how the data addresses the question (25 marks)
-e)Notes to describe the analytical methods (15 marks)
-f)Code to formally analyse the data to address the question (25 marks)
-g)Notes to interpret the results (15 marks)
+ While waterbird populations are currently healthy at Lake Moondarra, observation data over the past 35 years shows a steady decline in abundance. While further research is needed to determine the causes of this decline, the waterbird populations can be an indicator of stress to the ecosystem as a whole.
 
 # References
 
