@@ -15,6 +15,8 @@ library(dplyr)
 library(ggplot2)
 library(vegan)
 ```
+# Multivariate 1
+
 #1) Pearson correlation and euclidian distance
 ```{r beaches}
 #load data
@@ -61,6 +63,7 @@ ggplot(metals_xy, aes(MDS1, MDS2)) + geom_text(aes(label=Site))
 #Before we interpret the MDS plot, we should check the stress value.
 metals.mds$stress
 ```
+
 #MDS Bray-Curtis
 ```{r nutrients}
 #load data
@@ -81,6 +84,8 @@ nutrients_xy$treatment <- nutrients$Treatment
 
 ggplot(nutrients_xy, aes(MDS1, MDS2, color = treatment)) + geom_point()
 ```
+
+#Rockpools
 ```{r maroubra-rockpools}
 #load data
 RockPools <- read.csv(file = "data/multivariate/Maroubra_rock_pools.csv", header = TRUE)
@@ -102,7 +107,16 @@ rockpools_xy$year <- as.factor(RockPools$Year)
 
 ggplot(rockpools_xy, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point()
 
-ggplot(rockpools_xy, aes(MDS1, MDS2, color = year, shape=habitat)) + geom_point()
+# ggplot(rockpools_xy, aes(MDS1, MDS2, color = year, shape=habitat)) + geom_point()
+```
+
+# Multivariate 2
+
+#5)Heavy metals cluster
+```{r}
+metals.cluster <- hclust(dist(metals.sq, method = "euclidean"), method = "single")
+
+plot(as.dendrogram(metals.cluster))
 ```
 
 
