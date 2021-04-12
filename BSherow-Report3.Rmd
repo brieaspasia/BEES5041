@@ -18,13 +18,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(ggplot2) #graphing
 library(tidyverse) #data manipulation
-library(kableExtra) #table layouts
+# library(kableExtra) #table layouts
 library(broom) #tidy tables
 library(sjPlot) #tidy tables
 library(sjmisc) #tidy tables
 library(sjlabelled) #tidy tables
 library(car) #better qqplots with confint
-library(emmeans)
+library(emmeans) #pairwise comparisons
+library(pairwiseAdonis)
 ```
 
 # Supplementary materials
@@ -212,6 +213,9 @@ gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
 
 #check assumptions: 
   #If the data are highly skewed to the left or right, then a transformation will be necessary.
+#check assumptions: 
+  #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
+
 
 hist(gast.anova$residuals)
 
@@ -237,19 +241,6 @@ plot(RTgast.anova)
 qqPlot(SQgast.anova$residuals)
 qqPlot(LGgast.anova$residuals)
 qqPlot(RTgast.anova$residuals)
-
-
-#try again
-#contrast abundance across zones
-SQaust.anova <- aov(sqrt_abund ~ Zone, data = aust)
-LGaust.anova <- aov(log_abund ~ Zone, data = aust)
-
-#check assumptions: 
-  #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
-
-hist(SQaust.anova$residuals)
-hist(LGaust.anova$residuals)
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
 
 summary(LGgast.anova)
 
@@ -291,6 +282,32 @@ ggplot(rockpools_xy, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point(
 # ggplot(rockpools_xy, aes(MDS1, MDS2, color = year, shape=habitat)) + geom_point()
 ```
 
+```{r adonis}
+df.adonis <- adonis(
+  Rock_pools_vars_std ~ 
+    rockpools_xy$habitat*rockpools_xy$year, 
+  permutations=999, method="bray")
+df.adonis
+
+#testing habitat dispersion
+df.dis <- vegdist(Rock_pools_vars_std, method = "bray") # make a distance matrix
+df.betadisper.hab <- betadisper(df.dis, rockpools_xy$habitat) # test dispersion
+df.betadisper.hab
+permutest(df.betadisper.hab) 
+
+#testing year dispersion
+df.dis <- vegdist(Rock_pools_vars_std, method = "bray") # make a distance matrix
+df.betadisper.year <- betadisper(df.dis, rockpools_xy$year) # test dispersion
+df.betadisper.year
+permutest(df.betadisper.year)
+
+# #pairwise land use comparisons -- differences in CBD vs Industrial and Transport vs Industrial
+# LUZ.pair <- pairwise.adonis(df.dis, abund$LUZ, sim.method="bray", perm = 999, sim.function = "vegdist")
+# LUZ.pair
+# #pairwise land use comparisons -- differences between all pairs
+# cov.pair <- pairwise.adonis(df.dis, abund$covid, sim.method="bray", perm = 999, sim.function = "vegdist")
+# cov.pair
+```
 
 
 
