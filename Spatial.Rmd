@@ -1,0 +1,38 @@
+---
+title: "spatial"
+author: "Brie Sherow"
+date: "12/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load-libraries}
+library(sp)
+library(rgdal)
+library(rgeos)
+```
+#Q2) Importing spatial data
+```{r roads}
+roads_spdf <- readOGR(dsn="data/spatial/lines_unswroads.shp", layer="lines_unswroads")
+
+summary(roads_spdf)
+
+plot(roads_spdf, col="blue")
+
+#how many features are paths?
+table(roads_spdf@data$type)
+#203 paths, 92 roads
+
+p_spdf <- roads_spdf[roads_spdf@data$type == "path", ]
+r_spdf <- roads_spdf[roads_spdf@data$type == "road", ]
+
+plot(p_spdf, col="green")
+plot(r_spdf, col="red", add=T)
+
+buildings_spdf <- readOGR(dsn="data/spatial/polygons_unswbuildings.shp", layer="polygons_unswbuildings")
+```
+

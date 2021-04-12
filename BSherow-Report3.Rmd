@@ -12,9 +12,6 @@ output:
     toc: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 ```{r setup, warning=FALSE, message=FALSE, results='hide', include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -26,6 +23,8 @@ library(broom) #tidy tables
 library(sjPlot) #tidy tables
 library(sjmisc) #tidy tables
 library(sjlabelled) #tidy tables
+library(car) #better qqplots with confint
+library(emmeans)
 ```
 
 # Supplementary materials
@@ -142,23 +141,33 @@ plot(ner.anova)
 
 ner <- mutate(ner, sqrt_abund = sqrt(Abundance+1))
 ner <- mutate(ner, log_abund = log10(Abundance+1))
+ner <- mutate(ner, rt_abund = (Abundance+1)^(1/8))
 #try again
 #contrast abundance across zones
 LGner.anova <- aov(log_abund ~ Zone, data = ner)
 SQner.anova <- aov(sqrt_abund ~ Zone, data = ner)
+RTner.anova <- aov(rt_abund ~ Zone, data = ner)
 
 #check assumptions: 
   #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
 
 hist(SQner.anova$residuals)
 hist(LGner.anova$residuals)
+hist(RTner.anova$residuals)
 
   #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
 
 plot(LGner.anova)
+plot(SQner.anova)
 
 summary(LGner.anova)
 TukeyHSD(LGner.anova)
+
+summary(SQner.anova)
+TukeyHSD(SQner.anova)
+
+summary(RTner.anova)
+TukeyHSD(RTner.anova)
 ```
 
 ```{r aust-anova}
@@ -176,6 +185,7 @@ plot(aust.anova)
 
 aust <- mutate(aust, sqrt_abund = sqrt(Abundance+1))
 aust <- mutate(aust, log_abund = log10(Abundance+1))
+
 
 #try again
 #contrast abundance across zones
@@ -196,41 +206,66 @@ summary(SQaust.anova)
 TukeyHSD(SQaust.anova)
 ```
 
-```{r nod-anova}
+```{r gast-anova}
 #contrast abundance across zones
-nod.anova <- aov(Abundance ~ Zone, data = nod)
+gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
 
 #check assumptions: 
   #If the data are highly skewed to the left or right, then a transformation will be necessary.
 
-hist(nod.anova$residuals)
+hist(gast.anova$residuals)
+
+gastropods <- mutate(gastropods, sqrt_abund = sqrt(Abundance+1))
+gastropods <- mutate(gastropods, log_abund = log10(Abundance+1))
+gastropods <- mutate(gastropods, rt_abund = (Abundance+1)^(1/8))
+
+SQgast.anova <- aov(sqrt_abund ~ Zone * Species, data = gastropods)
+LGgast.anova <- aov(log_abund ~ Zone * Species, data = gastropods)
+RTgast.anova <- aov(rt_abund ~ Zone * Species, data = gastropods)
+
+hist(SQgast.anova$residuals)
+hist(LGgast.anova$residuals)
+hist(RTgast.anova$residuals)
 
   #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
 
-plot(nod.anova)
+plot(SQgast.anova)
+plot(LGgast.anova)
+plot(RTgast.anova)
 
-nod <- mutate(nod, sqrt_abund = sqrt(Abundance+1))
-nod <- mutate(nod, log_abund = log10(Abundance+1))
+# par(mfrow=c(2,2))
+qqPlot(SQgast.anova$residuals)
+qqPlot(LGgast.anova$residuals)
+qqPlot(RTgast.anova$residuals)
+
 
 #try again
 #contrast abundance across zones
-LGnod.anova <- aov(log_abund ~ Zone, data = nod)
-SQnod.anova <- aov(sqrt_abund ~ Zone, data = nod)
+SQaust.anova <- aov(sqrt_abund ~ Zone, data = aust)
+LGaust.anova <- aov(log_abund ~ Zone, data = aust)
 
 #check assumptions: 
   #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
 
-hist(LGnod.anova$residuals)
-hist(SQnod.anova$residuals)
-
+hist(SQaust.anova$residuals)
+hist(LGaust.anova$residuals)
   #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
 
-plot(LGnod.anova)
-plot(SQnod.anova)
+summary(LGgast.anova)
 
-summary(LGnod.anova)
-TukeyHSD(LGnod.anova)
+TukeyHSD(LGgast.anova)
 ```
+
+```{r emmeans}
+comp1 <- emmeans(LGgast.anova, ~Species|Zone)
+pairs(comp1)
+
+comp2 <- emmeans(LGgast.anova, ~Zone|Species)
+pairs(comp2)
+```
+
+#we care about things within species, differences between the three, and we want to look at the differences between shore heights.  Look at it within species and within tide heights.
+
 
 ```{r maroubra-rockpools}
 #load data
