@@ -18,14 +18,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(ggplot2) #graphing
 library(tidyverse) #data manipulation
-library(kableExtra) #table layouts
+# library(kableExtra) #table layouts
 library(broom) #tidy tables
 library(sjPlot) #tidy tables
 library(sjmisc) #tidy tables
 library(sjlabelled) #tidy tables
 library(car) #better qqplots with confint
 library(vegan) #ordination
-library(emmeans) #estimated marginal means
+library(emmeans) #pairwise comparisons
 
 ```
 
@@ -132,6 +132,7 @@ gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
 
     #tukey test
     TukeyHSD(LGgast.anova)
+
 ```
 
 ```{r emmeans}
@@ -165,10 +166,8 @@ data.scores$habitat <- RockPools$Habitat
 data.scores$year <- as.factor(RockPools$Year)
 
 ggplot(data.scores, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point(alpha=0.8)
-
-
-
 ```
+
 
 ```{r adonis-pairwise, warning=FALSE, message=FALSE}
 #Both land use and covid have significant scores, but there is not a significant interaction between them
@@ -184,6 +183,13 @@ df.dis <- vegdist(com, method = "bray") # make a distance matrix
 df.betadisper.yr <- betadisper(df.dis, data.scores$year) # test dispersion
 df.betadisper.yr
 permutest(df.betadisper.yr) #dispersion not significant
+
+# #pairwise land use comparisons -- differences in CBD vs Industrial and Transport vs Industrial
+# LUZ.pair <- pairwise.adonis(df.dis, abund$LUZ, sim.method="bray", perm = 999, sim.function = "vegdist")
+# LUZ.pair
+# #pairwise land use comparisons -- differences between all pairs
+# cov.pair <- pairwise.adonis(df.dis, abund$covid, sim.method="bray", perm = 999, sim.function = "vegdist")
+# cov.pair
 ```
 
 # Results
