@@ -24,7 +24,9 @@ library(sjPlot) #tidy tables
 library(sjmisc) #tidy tables
 library(sjlabelled) #tidy tables
 library(car) #better qqplots with confint
-library(emmeans)
+library(vegan) #ordination
+library(emmeans) #estimated marginal means
+
 ```
 
 # Supplementary materials
@@ -42,66 +44,26 @@ abund <- abund %>%
 ```
 
 # Intro
-Answering two questions: 1) Gastropod abundance vs. species and height on the shore (regression and ANOVA), and 2) Species composition in rockpool vs emergent habitats, and among sampling years. (multivariate)
+In this study I will answer two questions: 1) Does gastropod abundance differ with species and height on the shore (regression and ANOVA), and 2) Does species composition differ in rockpool vs emergent habitats, and between sampling years.  (multivariate)
 
 # Sampling methods
-1-2 paragraphs to briefly describe of the sampling methods(5 marks)
+  The study location is a rocky shoreline on Maroubra Beach in Sydney, Australia. 
+  
+  To test the hypothesis that abundance of gastropod species changes along shore gradients, students chose sites randomly along the rocky shore. An x,y grid of quadrats was created with a tape measure in a T-shape with the long end parallel to the shore. Coordinates of the samples were chosen with a random numbers table. This process was completed separately for each of the three species sampled; Austrolittorina, Nodilittorina, and Nerita. For each quadrat, students recorded the number of snails within the target species, the distance to nearest rockpool, and the zone (low, mid, or high).
+  
+  To test the hypothesis that species composition differs between rockpool and emergent habitats, students designated an equal number of quadrats in each habitat. For each quadrat, students recorded whether the habitat was in a rockpool, and the number of each of the target species present.
 
-## Linear model sampling
-We will test the general hypothesis that animal abundance varies at different heights on the shore, as moisture gradients create different habitats. Regression models use distance from the shore (continuous) vs abundance of animals (magnitude). ANOVA divides the shore into either low shore or high shore (categorical) to predict abundance (magnitude).
-
-Replicate the site to weed out the noise (variance) of other factors in animal abundance such as structure of the headland creating wave patterns, shape of rocks, observer ability, preditor/prey interactions between species (lack of independence between samples). Because animals may interact with each other, we must take separate samples for the 3 species.
-
-Choosing sampling sites randomly
-
-    We will lay tape measure out in a T shape with the long end parallel to the shore to create the 2 zones each 4m high and 10m long
-    This will be used as a x,y coordinate system to randomly choose the location of quadrats.
-    For each zone, X is from the water to the shore with 0 closest to the water; Y is parallel to the shore with 0 meeting the X tape.
-    Use a random numbers table to choose the coordinates of the samples within each of these zones.
-    Pick any spot on the table to begin and read off series of 3 digits as the distance value
-    E.g. 238569 would give 2.38m along X axis and 5.69m along the Y axis
-    We only have 4m along the X axis so when looking for the X coordinates, only begin with numbers < 4 (e.g. 535586 you skip the 5 and use 3.55m)
-
-Do this separately for each of three species of gastropods we will be counting. This means different locations for each species.
-
-Recording data.
-
-For each quadrat, enter the following data on the data sheet provided:
-
-    the zone (high, mid or low)
-    the number of the selected snail per quadrat
-    the distance to the nearest rockpool
-
-## Multivariate sampling  
-In this exercise, we can measure all species within a quadrat, providing us with a multivariate data set (i.e., many variables measured from each sampling unit).
-
-Choosing sampling sites randomly. We will use the x-y co-ordinate system as described above for Group 1 to randomly select our sampling sites on the rock platform. We want an equal number of quadrats in both habitats, and need to ensure that a single rock pool is not sampled twice.
-
-Recording data. For each quadrat, enter the following data on the data sheet provided:
-
-    the habitat (in or out of rockpools)
-    the number of the individuals of each species listed on the data sheet
 
 # Analysis methods
 A description of how the data were analysed foreach hypothesis.This should include any treatment of the data before analysis, what tests were run and how any assumptions of those tests were checked).(10 marks, 2-3 paragraphs)
 
 
-```{r data-explore}
+```{r explore-data}
 #load zones
 gastropods <- read.csv(file = "data/Linear_models/MaroubraZones.csv", header = T)
-
       #remove X column
       gastropods <- gastropods %>%
         dplyr::select(-X)
-
-#look at differences between species
-aust <- filter(gastropods, Species == "Austrolittorina")
-
-
-nod <- filter(gastropods, Species == "Nodilittorina")
-
-
-ner <- filter(gastropods, Species == "Nerita")
 
 #visualise differences in species
 ggplot(ner, aes(Zone, Abundance)) + geom_boxplot()
@@ -126,134 +88,50 @@ ggplot(gastro_summary,
 ```
 
 
-```{r nerita-anova}
-#contrast abundance across zones
-ner.anova <- aov(Abundance ~ Zone, data = ner)
-
-#check assumptions: 
-  #If the data are highly skewed to the left or right, then a transformation will be necessary.
-
-hist(ner.anova$residuals)
-
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
-
-plot(ner.anova)
-
-ner <- mutate(ner, sqrt_abund = sqrt(Abundance+1))
-ner <- mutate(ner, log_abund = log10(Abundance+1))
-ner <- mutate(ner, rt_abund = (Abundance+1)^(1/8))
-#try again
-#contrast abundance across zones
-LGner.anova <- aov(log_abund ~ Zone, data = ner)
-SQner.anova <- aov(sqrt_abund ~ Zone, data = ner)
-RTner.anova <- aov(rt_abund ~ Zone, data = ner)
-
-#check assumptions: 
-  #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
-
-hist(SQner.anova$residuals)
-hist(LGner.anova$residuals)
-hist(RTner.anova$residuals)
-
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
-
-plot(LGner.anova)
-plot(SQner.anova)
-
-summary(LGner.anova)
-TukeyHSD(LGner.anova)
-
-summary(SQner.anova)
-TukeyHSD(SQner.anova)
-
-summary(RTner.anova)
-TukeyHSD(RTner.anova)
-```
-
-```{r aust-anova}
-#contrast abundance across zones
-aust.anova <- aov(Abundance ~ Zone, data = aust)
-
-#check assumptions: 
-  #If the data are highly skewed to the left or right, then a transformation will be necessary.
-
-hist(aust.anova$residuals)
-
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
-
-plot(aust.anova)
-
-aust <- mutate(aust, sqrt_abund = sqrt(Abundance+1))
-aust <- mutate(aust, log_abund = log10(Abundance+1))
-
-
-#try again
-#contrast abundance across zones
-SQaust.anova <- aov(sqrt_abund ~ Zone, data = aust)
-LGaust.anova <- aov(log_abund ~ Zone, data = aust)
-
-#check assumptions: 
-  #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
-
-hist(SQaust.anova$residuals)
-hist(LGaust.anova$residuals)
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
-
-plot(SQaust.anova)
-
-summary(SQaust.anova)
-
-TukeyHSD(SQaust.anova)
-```
 
 ```{r gast-anova}
 #contrast abundance across zones
 gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
 
 #check assumptions: 
-  #If the data are highly skewed to the left or right, then a transformation will be necessary.
+    #the data is highly skewed to the left, so transformations are necessary
+    hist(gast.anova$residuals)
+  
+    # #creating transformations from sqrt, log10, and 1/8 rt
+    # gastropods <- mutate(gastropods, sqrt_abund = sqrt(Abundance+1))
+    # gastropods <- mutate(gastropods, rt_abund = (Abundance+1)^(1/8))
+    gastropods <- mutate(gastropods, log_abund = log10(Abundance+1))
+  
+    # #creating anovas to test with each transformation
+    # SQgast.anova <- aov(sqrt_abund ~ Zone * Species, data = gastropods)
+    # RTgast.anova <- aov(rt_abund ~ Zone * Species, data = gastropods)
+    LGgast.anova <- aov(log_abund ~ Zone * Species, data = gastropods)
+    
+    # #checking the distribution with each transformation
+    # hist(SQgast.anova$residuals)
+    # hist(RTgast.anova$residuals)
+    hist(LGgast.anova$residuals)
+    
+    # #checking the QQ plot with confidence intervals
+    # # par(mfrow=c(2,2))
+    # qqPlot(SQgast.anova$residuals)
+    # qqPlot(RTgast.anova$residuals)
+    qqPlot(LGgast.anova$residuals)
 
-hist(gast.anova$residuals)
+  # #looking at the residuals vs fits graph
+  #   plot(SQgast.anova)
+  #   plot(RTgast.anova)
+    plot(LGgast.anova)
 
-gastropods <- mutate(gastropods, sqrt_abund = sqrt(Abundance+1))
-gastropods <- mutate(gastropods, log_abund = log10(Abundance+1))
-gastropods <- mutate(gastropods, rt_abund = (Abundance+1)^(1/8))
+#This data is likely better suited to a GLM model, but within the parameters of this class, I've chosen a log transformation as the best fit.
 
-SQgast.anova <- aov(sqrt_abund ~ Zone * Species, data = gastropods)
-LGgast.anova <- aov(log_abund ~ Zone * Species, data = gastropods)
-RTgast.anova <- aov(rt_abund ~ Zone * Species, data = gastropods)
+    #summary table
+    summary(LGgast.anova)
+    
+    #Both species and zone are significant, and there is an interaction between.
 
-hist(SQgast.anova$residuals)
-hist(LGgast.anova$residuals)
-hist(RTgast.anova$residuals)
-
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
-
-plot(SQgast.anova)
-plot(LGgast.anova)
-plot(RTgast.anova)
-
-# par(mfrow=c(2,2))
-qqPlot(SQgast.anova$residuals)
-qqPlot(LGgast.anova$residuals)
-qqPlot(RTgast.anova$residuals)
-
-
-#try again
-#contrast abundance across zones
-SQaust.anova <- aov(sqrt_abund ~ Zone, data = aust)
-LGaust.anova <- aov(log_abund ~ Zone, data = aust)
-
-#check assumptions: 
-  #If the frequency histogram of residuals is approximately normal, then the assumption of normality is met. If the data are highly skewed to the left or right, then a transformation will be necessary.
-
-hist(SQaust.anova$residuals)
-hist(LGaust.anova$residuals)
-  #Now check the homogeneity of variance assumption by looking at the residuals vs fits graph using plot
-
-summary(LGgast.anova)
-
-TukeyHSD(LGgast.anova)
+    #tukey test
+    TukeyHSD(LGgast.anova)
 ```
 
 ```{r emmeans}
@@ -275,24 +153,38 @@ RockPools <- read.csv(file = "data/multivariate/Maroubra_rock_pools.csv", header
 RockPools_vars <- dplyr::select(RockPools, -X, -Habitat, - Year, -Replicate)
 
 #Some of the variables are % cover (the red, brown and green algae) and some are counts of individual animals. Clearly 100% cover is not equivalent to 100 snails, so we can standardise these variables to ensure each variable is on the same scale. We can use the function decostand from vegan to standardise each variable by the maximum value of that variable. We then end up with all variables having values between 0 and 1.
-Rock_pools_vars_std <- decostand(RockPools_vars, method= "max")
+com <- decostand(RockPools_vars, method= "max")
 
 #create MDS with Bray-Curtis for species composition community data
-rockpools.mds <- metaMDS(Rock_pools_vars_std, distance = "bray", autotransform = FALSE, trace=FALSE)
+rockpools.mds <- metaMDS(com, distance = "bray", autotransform = FALSE, trace=FALSE)
 
-rockpools_xy <- data.frame(rockpools.mds$points)
+data.scores <- data.frame(rockpools.mds$points)
 
-rockpools_xy$habitat <- RockPools$Habitat
+data.scores$habitat <- RockPools$Habitat
 
-rockpools_xy$year <- as.factor(RockPools$Year)
+data.scores$year <- as.factor(RockPools$Year)
 
-ggplot(rockpools_xy, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point()
+ggplot(data.scores, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point(alpha=0.8)
 
-# ggplot(rockpools_xy, aes(MDS1, MDS2, color = year, shape=habitat)) + geom_point()
+
+
 ```
 
-
-
+```{r adonis-pairwise, warning=FALSE, message=FALSE}
+#Both land use and covid have significant scores, but there is not a significant interaction between them
+df.adonis <- adonis(com ~ data.scores$habitat*data.scores$year, permutations=999, method="bray")
+df.adonis
+#testing land use dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.hab <- betadisper(df.dis, data.scores$habitat) # test dispersion
+df.betadisper.hab
+permutest(df.betadisper.hab) #dispersion not significant
+#testing covid dispersion
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+df.betadisper.yr <- betadisper(df.dis, data.scores$year) # test dispersion
+df.betadisper.yr
+permutest(df.betadisper.yr) #dispersion not significant
+```
 
 # Results
 
@@ -300,4 +192,6 @@ A written description of your findings (10 marks, 3-4 paragraphs)
 
 Figures that visualise those results (with figure legend) (15 marks)
 
-The details of statistical tests that support the conclusions you madein the text (either incorporated into the text, or in a table with anappropriate table legend). (10 marks)
+The details of statistical tests that support the conclusions you made in the text (either incorporated into the text, or in a table with an appropriate table legend). (10 marks)
+
+# References
