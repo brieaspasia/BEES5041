@@ -65,11 +65,6 @@ gastropods <- read.csv(file = "data/Linear_models/MaroubraZones.csv", header = T
       #remove X column
       gastropods <- gastropods %>%
         dplyr::select(-X)
-
-#visualise differences in species
-      ggplot(gastropods, aes(Zone, Abundance, colour=Zone)) +
-        geom_boxplot() +
-        facet_wrap(~Species, scales="free_y")
       
 gastro_summary <- gastropods %>%
   group_by(Species, Zone) %>% 
@@ -196,9 +191,6 @@ permutest(df.betadisper.yr) #dispersion significant
 #pairwise habitat comparisons -- differences in rockpool vs emergent
 hab.pair <- pairwise.adonis(df.dis, data.scores$habitat, sim.method="bray", perm = 999, sim.function = "vegdist")
 hab.pair
-#pairwise year comparisons -- differences between all pairs
-year.pair <- pairwise.adonis(df.dis, data.scores$year, sim.method="bray", perm = 999, sim.function = "vegdist")
-year.pair
 ```
 
 # Results
@@ -241,11 +233,10 @@ Species = Nodilittorina:
  High - Mid    0.397 0.0737 414  5.386  <.0001 
  
 ```{r ANOVA-plot, warning=FALSE, message=FALSE}
-
-boxplot(log_abund ~ Zone * Species, data = gastropods,
-        names = c("High.Aust","Mid.Aust","High.Ner","Mid.Ner","High.Nod","Mid.Nod"),
-        ylab="Species abundance",
-        xlab="Zone")
+#visualise differences in species
+      ggplot(gastropods, aes(Zone, Abundance, colour=Zone)) +
+        geom_boxplot() +
+        facet_wrap(~Species, scales="free_y")
 ```
 
 ## multivariate results
@@ -270,7 +261,6 @@ The details of statistical tests that support the conclusions you made in the te
 ### Questions: 
 -- Why is the dispersion significant in betadisperser and what does that mean for the results?
 -- What is a better way to plot ANOVA results in ggplot that shows something different than the data exploration?
--- Why is year and interaction with year significant in the results, but doesn't appear to be in the plot?
 -- How do you write about the results without just repeating yourself a million times?
 
 # References
