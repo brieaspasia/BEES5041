@@ -26,6 +26,7 @@ library(sjlabelled) #tidy tables
 library(car) #better qqplots with confint
 library(vegan) #ordination
 library(emmeans) #pairwise comparisons
+library(pairwiseAdonis)
 
 ```
 
@@ -33,8 +34,6 @@ library(emmeans) #pairwise comparisons
 The repository used to store this data can be found at [https://github.com/brieaspasia/BEES5041](https://github.com/brieaspasia/BEES5041)
 
 ```{r load-data}
-
-
 #load abundance
 abund <- read.csv(file = "data/multivariate/Maroubra_rock_pools.csv", header = T)
 
@@ -44,7 +43,7 @@ abund <- abund %>%
 ```
 
 # Intro
-In this study I will answer two questions: 1) Does gastropod abundance differ with species and height on the shore (regression and ANOVA), and 2) Does species composition differ in rockpool vs emergent habitats, and between sampling years.  (multivariate)
+In this study I will answer two questions: 1) Does gastropod abundance differ with species and height on the shore (ANOVA), and 2) Does species composition differ in rockpool vs emergent habitats, and between sampling years.  (multivariate)
 
 # Sampling methods
   The study location is a rocky shoreline on Maroubra Beach in Sydney, Australia. 
@@ -55,10 +54,12 @@ In this study I will answer two questions: 1) Does gastropod abundance differ wi
 
 
 # Analysis methods
-A description of how the data were analysed foreach hypothesis.This should include any treatment of the data before analysis, what tests were run and how any assumptions of those tests were checked).(10 marks, 2-3 paragraphs)
+  
+## Exploratory analysis
+    
+  Pre-analysis, data was manipulated using tidyverse package (Wickham et al 2019) in R. I used ggplot graphs as an exploratory visualisation tool, plotting abundance of each species by coastal zone. Nerita are more abundant in the mid-shore zone, while Nodilittorina are more abundant in the high-shore zone. Austrolittorina has more variation in abundance, but is still more abundant in the mid-shore.
 
-
-```{r explore-data}
+```{r explore-data, warning=FALSE, message=FALSE}
 #load zones
 gastropods <- read.csv(file = "data/Linear_models/MaroubraZones.csv", header = T)
       #remove X column
@@ -66,9 +67,7 @@ gastropods <- read.csv(file = "data/Linear_models/MaroubraZones.csv", header = T
         dplyr::select(-X)
 
 #visualise differences in species
-ggplot(ner, aes(Zone, Abundance)) + geom_boxplot()
-      
-      ggplot(gastropods, aes(Zone, Abundance)) +
+      ggplot(gastropods, aes(Zone, Abundance, colour=Zone)) +
         geom_boxplot() +
         facet_wrap(~Species, scales="free_y")
       
@@ -79,17 +78,26 @@ gastro_summary <- gastropods %>%
   SE_Abundance = sd(Abundance)/sqrt(n()))
 
 ggplot(gastro_summary, 
-       aes(Zone, mean_Abundance)) +
+       aes(Zone, mean_Abundance, fill=Zone)) +
   geom_col() +
   geom_errorbar(aes(ymin = mean_Abundance - SE_Abundance,
    ymax = mean_Abundance + SE_Abundance), 
    width=0.2) +
   facet_wrap(~Species, scales="free_y")
+
 ```
 
+## ANOVA
 
+  Abundance of species were contrasted between shore gradients using an ANOVA, with abundance predicted by zone, using species as an effect. I first checked assumptions with a histogram of residuals. Finding the data skewed to the left, I found log transformation of abundance to be the best (although not perfect!) fit. In order to check normality I plotted the residuals and confidence intervals in a qq-plot using car package (Foz and Weisberg 2019). I checked the homogeneity of variance by plotting the residuals vs fitted of the ANOVA. This data is likely better suited to a GLM model, but within the parameters of this class I believe the log transformation is the best fit.
+  
+  In order to test the differences between species and the differences between shore heights, I ran a Tukey post-hoc test. I used emmeans package (Lenth 2021) for a more intuitive output of the comparisons within species and within zones.
+  
+## Multivariate
 
-```{r gast-anova}
+  To test the species composition between rockpools and emergent habitats, I first created a community dataframe of species abundance. I then used vegan package (Oksanen et al 2020) to standardise the abundance measures as some variables were percent cover and others were counts. I used multi-dimensional scaling to create a similarity matrix, and used stress to test conformity in the data. I then joined habitat and year data to the x-y coordinates of the ordination. I then used pairwise adonis package (Arbizu 2017) for multilevel pairwise comparisons of both habitat and year.
+
+```{r gast-anova, warning=FALSE, message=FALSE}
 #contrast abundance across zones
 gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
 
@@ -123,19 +131,18 @@ gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
   #   plot(RTgast.anova)
     plot(LGgast.anova)
 
-#This data is likely better suited to a GLM model, but within the parameters of this class, I've chosen a log transformation as the best fit.
+#This data is likely better suited to a GLM model, but within the parameters of this class I've chosen a log transformation as the best fit.
 
     #summary table
     summary(LGgast.anova)
     
-    #Both species and zone are significant, and there is an interaction between.
+#Both species and zone are significant, and there is an interaction between.
 
     #tukey test
     TukeyHSD(LGgast.anova)
-
 ```
 
-```{r emmeans}
+```{r emmeans, warning=FALSE, message=FALSE, results='hide'}
 comp1 <- emmeans(LGgast.anova, ~Species|Zone)
 pairs(comp1)
 
@@ -146,58 +153,144 @@ pairs(comp2)
 #we care about things within species, differences between the three, and we want to look at the differences between shore heights.  Look at it within species and within tide heights.
 
 
-```{r maroubra-rockpools}
+```{r maroubra-rockpools, warning=FALSE, message=FALSE, results='hide'}
 #load data
 RockPools <- read.csv(file = "data/multivariate/Maroubra_rock_pools.csv", header = TRUE)
 
 #create abundance matrix
 RockPools_vars <- dplyr::select(RockPools, -X, -Habitat, - Year, -Replicate)
 
-#Some of the variables are % cover (the red, brown and green algae) and some are counts of individual animals. Clearly 100% cover is not equivalent to 100 snails, so we can standardise these variables to ensure each variable is on the same scale. We can use the function decostand from vegan to standardise each variable by the maximum value of that variable. We then end up with all variables having values between 0 and 1.
+#standardise community data
 com <- decostand(RockPools_vars, method= "max")
 
 #create MDS with Bray-Curtis for species composition community data
 rockpools.mds <- metaMDS(com, distance = "bray", autotransform = FALSE, trace=FALSE)
 
+#This should ideally be less than 0.2, but this is close
+rockpools.mds$stress #0.2319649
+
+#create x-y data from matrix
 data.scores <- data.frame(rockpools.mds$points)
 
+#add habitat and year to x-y data
 data.scores$habitat <- RockPools$Habitat
-
 data.scores$year <- as.factor(RockPools$Year)
-
-ggplot(data.scores, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point(alpha=0.8)
 ```
 
 
 ```{r adonis-pairwise, warning=FALSE, message=FALSE}
-#Both land use and covid have significant scores, but there is not a significant interaction between them
+#Both habitat and year have significant scores, and there is a significant interaction between them
 df.adonis <- adonis(com ~ data.scores$habitat*data.scores$year, permutations=999, method="bray")
 df.adonis
-#testing land use dispersion
+#testing habitat dispersion
 df.dis <- vegdist(com, method = "bray") # make a distance matrix
 df.betadisper.hab <- betadisper(df.dis, data.scores$habitat) # test dispersion
 df.betadisper.hab
-permutest(df.betadisper.hab) #dispersion not significant
-#testing covid dispersion
+permutest(df.betadisper.hab) #dispersion significant
+#testing year dispersion
 df.dis <- vegdist(com, method = "bray") # make a distance matrix
 df.betadisper.yr <- betadisper(df.dis, data.scores$year) # test dispersion
 df.betadisper.yr
-permutest(df.betadisper.yr) #dispersion not significant
+permutest(df.betadisper.yr) #dispersion significant
 
-# #pairwise land use comparisons -- differences in CBD vs Industrial and Transport vs Industrial
-# LUZ.pair <- pairwise.adonis(df.dis, abund$LUZ, sim.method="bray", perm = 999, sim.function = "vegdist")
-# LUZ.pair
-# #pairwise land use comparisons -- differences between all pairs
-# cov.pair <- pairwise.adonis(df.dis, abund$covid, sim.method="bray", perm = 999, sim.function = "vegdist")
-# cov.pair
+#pairwise habitat comparisons -- differences in rockpool vs emergent
+hab.pair <- pairwise.adonis(df.dis, data.scores$habitat, sim.method="bray", perm = 999, sim.function = "vegdist")
+hab.pair
+#pairwise year comparisons -- differences between all pairs
+year.pair <- pairwise.adonis(df.dis, data.scores$year, sim.method="bray", perm = 999, sim.function = "vegdist")
+year.pair
 ```
 
 # Results
 
+## ANOVA results
+
+  ANOVA results show that abundance differs with species and height on the shore. Shore height and species type are each significant predictors in species abundance, and the interaction between the two is also significant. 
+  
+                Df Sum Sq Mean Sq F value   Pr(>F)    
+Zone           1   1.91    1.91   10.02  0.00166 ** 
+Species        2  76.75   38.38  201.62  < 2e-16 ***
+Zone:Species   2  14.88    7.44   39.09 2.82e-16 ***
+Residuals    414  78.80    0.19  
+
+Tukey post-hoc tests in emmeans confirmed that the shore height is a determining factor for species abundance; both in terms of looking at comparisons within each zone, and looking at comparisons within each species.
+
+Zone = High:
+ contrast                        estimate     SE  df t.ratio p.value
+ Austrolittorina - Nerita           0.925 0.0737 414 12.544  <.0001 
+ Austrolittorina - Nodilittorina    0.459 0.0737 414  6.220  <.0001 
+ Nerita - Nodilittorina            -0.466 0.0737 414 -6.324  <.0001 
+
+Zone = Mid:
+ contrast                        estimate     SE  df t.ratio p.value
+ Austrolittorina - Nerita           0.960 0.0737 414 13.018  <.0001 
+ Austrolittorina - Nodilittorina    1.274 0.0737 414 17.277  <.0001 
+ Nerita - Nodilittorina             0.314 0.0737 414  4.260  0.0001 
+
+P value adjustment: tukey method for comparing a family of 3 estimates 
+Species = Austrolittorina:
+ contrast   estimate     SE  df t.ratio p.value
+ High - Mid   -0.418 0.0737 414 -5.672  <.0001 
+
+Species = Nerita:
+ contrast   estimate     SE  df t.ratio p.value
+ High - Mid   -0.383 0.0737 414 -5.198  <.0001 
+
+Species = Nodilittorina:
+ contrast   estimate     SE  df t.ratio p.value
+ High - Mid    0.397 0.0737 414  5.386  <.0001 
+ 
+```{r ANOVA-plot, warning=FALSE, message=FALSE}
+
+boxplot(log_abund ~ Zone * Species, data = gastropods,
+        names = c("High.Aust","Mid.Aust","High.Ner","Mid.Ner","High.Nod","Mid.Nod"),
+        ylab="Species abundance",
+        xlab="Zone")
+```
+
+## multivariate results
+
+  The gastropod abundance was dependent on habitat (emergent or rockpool), and year. There was an interaction between habitat and year.
+  
+                           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
+habitat                    1    11.256 11.2564  39.063 0.07995  0.001
+year                       4     9.543  2.3858   8.280 0.06778  0.001
+habitat:year               4     2.999  0.7496   2.602 0.02130  0.001
+
+
+```{r MDS-plot}
+ggplot(data.scores, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point(alpha=0.8)
+```
 A written description of your findings (10 marks, 3-4 paragraphs)
 
 Figures that visualise those results (with figure legend) (15 marks)
 
 The details of statistical tests that support the conclusions you made in the text (either incorporated into the text, or in a table with an appropriate table legend). (10 marks)
 
+### Questions: 
+-- Why is the dispersion significant in betadisperser and what does that mean for the results?
+-- What is a better way to plot ANOVA results in ggplot that shows something different than the data exploration?
+-- Why is year and interaction with year significant in the results, but doesn't appear to be in the plot?
+-- How do you write about the results without just repeating yourself a million times?
+
 # References
+
+Pedro Martinez Arbizu (2017). pairwiseAdonis: Pairwise Multilevel
+  Comparison using Adonis. R package version 0.0.1.
+  
+John Fox and Sanford Weisberg (2019). An {R} Companion to Applied
+  Regression, Third Edition. Thousand Oaks CA: Sage. URL:
+  https://socialsciences.mcmaster.ca/jfox/Books/Companion/
+  
+Jari Oksanen, F. Guillaume Blanchet, Michael Friendly, Roeland Kindt,
+  Pierre Legendre, Dan McGlinn, Peter R. Minchin, R. B. O'Hara, Gavin L.
+  Simpson, Peter Solymos, M. Henry H. Stevens, Eduard Szoecs and Helene
+  Wagner (2020). vegan: Community Ecology Package. R package version
+  2.5-7. https://CRAN.R-project.org/package=vegan
+  
+Russell V. Lenth (2021). emmeans: Estimated Marginal Means, aka
+  Least-Squares Means. R package version 1.5.5-1.
+  https://CRAN.R-project.org/package=emmeans
+  
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open
+  Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
