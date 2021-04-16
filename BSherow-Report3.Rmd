@@ -18,15 +18,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(ggplot2) #graphing
 library(tidyverse) #data manipulation
-# library(kableExtra) #table layouts
 library(broom) #tidy tables
-library(sjPlot) #tidy tables
-library(sjmisc) #tidy tables
-library(sjlabelled) #tidy tables
+library(rstatix) #tidy tables
+library(formattable) #tidy tables
 library(car) #better qqplots with confint
 library(vegan) #ordination
 library(emmeans) #pairwise comparisons
-library(pairwiseAdonis)
+library(pairwiseAdonis) #multilevel pairwise
 
 ```
 
@@ -115,26 +113,23 @@ gast.anova <- aov(Abundance ~ Zone * Species, data = gastropods)
     # hist(RTgast.anova$residuals)
     hist(LGgast.anova$residuals)
     
-    # #checking the QQ plot with confidence intervals
-    # # par(mfrow=c(2,2))
+        # #checking the QQ plot with confidence intervals
     # qqPlot(SQgast.anova$residuals)
     # qqPlot(RTgast.anova$residuals)
-    qqPlot(LGgast.anova$residuals)
+    qq <- qqPlot(LGgast.anova$residuals)
 
   # #looking at the residuals vs fits graph
   #   plot(SQgast.anova)
   #   plot(RTgast.anova)
-    plot(LGgast.anova)
+  par(mfrow=c(2,2))
+  plot(LGgast.anova)
 
-#This data is likely better suited to a GLM model, but within the parameters of this class I've chosen a log transformation as the best fit.
-
-    #summary table
-    summary(LGgast.anova)
+ #This data is likely better suited to a GLM model, but within the parameters of this class I've chosen a log transformation as the best fit.
     
 #Both species and zone are significant, and there is an interaction between.
 
-    #tukey test
-    TukeyHSD(LGgast.anova)
+    # #tukey test
+    # TukeyHSD(LGgast.anova)
 ```
 
 ```{r emmeans, warning=FALSE, message=FALSE, results='hide'}
@@ -144,8 +139,6 @@ pairs(comp1)
 comp2 <- emmeans(LGgast.anova, ~Zone|Species)
 pairs(comp2)
 ```
-
-#we care about things within species, differences between the three, and we want to look at the differences between shore heights.  Look at it within species and within tide heights.
 
 
 ```{r maroubra-rockpools, warning=FALSE, message=FALSE, results='hide'}
@@ -173,24 +166,14 @@ data.scores$year <- as.factor(RockPools$Year)
 ```
 
 
-```{r adonis-pairwise, warning=FALSE, message=FALSE}
+```{r adonis-pairwise, warning=FALSE, message=FALSE, results='hide'}
 #Both habitat and year have significant scores, and there is a significant interaction between them
 df.adonis <- adonis(com ~ data.scores$habitat*data.scores$year, permutations=999, method="bray")
-df.adonis
-#testing habitat dispersion
-df.dis <- vegdist(com, method = "bray") # make a distance matrix
-df.betadisper.hab <- betadisper(df.dis, data.scores$habitat) # test dispersion
-df.betadisper.hab
-permutest(df.betadisper.hab) #dispersion significant
-#testing year dispersion
-df.dis <- vegdist(com, method = "bray") # make a distance matrix
-df.betadisper.yr <- betadisper(df.dis, data.scores$year) # test dispersion
-df.betadisper.yr
-permutest(df.betadisper.yr) #dispersion significant
 
 #pairwise habitat comparisons -- differences in rockpool vs emergent
+df.dis <- vegdist(com, method = "bray") # make a distance matrix
+
 hab.pair <- pairwise.adonis(df.dis, data.scores$habitat, sim.method="bray", perm = 999, sim.function = "vegdist")
-hab.pair
 ```
 
 # Results
@@ -199,38 +182,24 @@ hab.pair
 
   ANOVA results show that abundance differs with species and height on the shore. Shore height and species type are each significant predictors in species abundance, and the interaction between the two is also significant. 
   
-                Df Sum Sq Mean Sq F value   Pr(>F)    
-Zone           1   1.91    1.91   10.02  0.00166 ** 
-Species        2  76.75   38.38  201.62  < 2e-16 ***
-Zone:Species   2  14.88    7.44   39.09 2.82e-16 ***
-Residuals    414  78.80    0.19  
+```{r ANOVA-results}
+# #tidy table
+# summary(LGgast.anova)
+
+tidy_table <-anova_summary(LGgast.anova, effect.size = "ges", detailed = FALSE, observed = NULL)
+
+formattable(tidy_table)
+```
 
 Tukey post-hoc tests in emmeans confirmed that the shore height is a determining factor for species abundance; both in terms of looking at comparisons within each zone, and looking at comparisons within each species.
 
-Zone = High:
- contrast                        estimate     SE  df t.ratio p.value
- Austrolittorina - Nerita           0.925 0.0737 414 12.544  <.0001 
- Austrolittorina - Nodilittorina    0.459 0.0737 414  6.220  <.0001 
- Nerita - Nodilittorina            -0.466 0.0737 414 -6.324  <.0001 
+```{r tukey-emmeans-results}
+comp1 <- as.data.frame(comp1)
+comp2 <- as.data.frame(comp2)
 
-Zone = Mid:
- contrast                        estimate     SE  df t.ratio p.value
- Austrolittorina - Nerita           0.960 0.0737 414 13.018  <.0001 
- Austrolittorina - Nodilittorina    1.274 0.0737 414 17.277  <.0001 
- Nerita - Nodilittorina             0.314 0.0737 414  4.260  0.0001 
-
-P value adjustment: tukey method for comparing a family of 3 estimates 
-Species = Austrolittorina:
- contrast   estimate     SE  df t.ratio p.value
- High - Mid   -0.418 0.0737 414 -5.672  <.0001 
-
-Species = Nerita:
- contrast   estimate     SE  df t.ratio p.value
- High - Mid   -0.383 0.0737 414 -5.198  <.0001 
-
-Species = Nodilittorina:
- contrast   estimate     SE  df t.ratio p.value
- High - Mid    0.397 0.0737 414  5.386  <.0001 
+formattable(comp1)
+formattable(comp2)
+```
  
 ```{r ANOVA-plot, warning=FALSE, message=FALSE}
 #visualise differences in species
@@ -243,25 +212,20 @@ Species = Nodilittorina:
 
   The gastropod abundance was dependent on habitat (emergent or rockpool), and year. There was an interaction between habitat and year.
   
-                           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)
-habitat                    1    11.256 11.2564  39.063 0.07995  0.001
-year                       4     9.543  2.3858   8.280 0.06778  0.001
-habitat:year               4     2.999  0.7496   2.602 0.02130  0.001
+```{r habitat-pairwise}
+pairwise <- as.data.frame(df.adonis$aov.tab)
+
+row.names(pairwise) <- c("habitat", "year", "habitat:year", "residuals", "total")
+
+formattable(pairwise)
+
+formattable(hab.pair)
+```
 
 
 ```{r MDS-plot}
 ggplot(data.scores, aes(MDS1, MDS2, color = habitat, shape=year)) + geom_point(alpha=0.8)
 ```
-A written description of your findings (10 marks, 3-4 paragraphs)
-
-Figures that visualise those results (with figure legend) (15 marks)
-
-The details of statistical tests that support the conclusions you made in the text (either incorporated into the text, or in a table with an appropriate table legend). (10 marks)
-
-### Questions: 
--- Why is the dispersion significant in betadisperser and what does that mean for the results?
--- What is a better way to plot ANOVA results in ggplot that shows something different than the data exploration?
--- How do you write about the results without just repeating yourself a million times?
 
 # References
 
