@@ -14,9 +14,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(sp)
 library(rgdal)
 library(rgeos)
+library(ggmap)
 ```
 #Q2) Importing spatial data
-```{r roads}
+```{r importing-subsetting}
 roads_spdf <- readOGR(dsn="data/spatial/lines_unswroads.shp", layer="lines_unswroads")
 
 summary(roads_spdf)
@@ -34,5 +35,125 @@ plot(p_spdf, col="green")
 plot(r_spdf, col="red", add=T)
 
 buildings_spdf <- readOGR(dsn="data/spatial/polygons_unswbuildings.shp", layer="polygons_unswbuildings")
+
+#checking projection to make sure it matches roads
+buildings_spdf@proj4string
+
+plot(buildings_spdf, col="light grey")
+plot(roads_spdf, col="blue", add=TRUE)
+
+#importing points and assigning spatial from coords
+observations_df <- read.csv(file="data/spatial/bird_obs.csv")
+
+# Define a dataframe for the coordinates
+coords_df <- observations_df[, c("Longitude", "Latitude")]
+
+# Define the CRS
+coordRef = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+#creating spatial df using coordRef
+observations_spdf <- SpatialPointsDataFrame(coords=coords_df, data=observations_df, proj4string=coordRef)
+
+# Plot the observations
+plot(buildings_spdf, col="light grey")
+plot(roads_spdf, col="blue", add=TRUE)
+plot(observations_spdf, col="red", add=TRUE)
+
+unique(observations_df$Species)
+#"Myna", "Ibis", "Magpie", "Lorikeet", "Swallow", "Crow", "Pigeon"  
+
+myna_spdf <- observations_spdf[observations_spdf@data$Species == "Myna", ]
+ibis_spdf <- observations_spdf[observations_spdf@data$Species == "Ibis", ]
+magpie_spdf <- observations_spdf[observations_spdf@data$Species == "Magpie", ]
+lor_spdf <- observations_spdf[observations_spdf@data$Species == "Lorikeet", ]
+swal_spdf <- observations_spdf[observations_spdf@data$Species == "Swallow", ]
+crow_spdf <- observations_spdf[observations_spdf@data$Species == "Crow", ]
+pige_spdf <- observations_spdf[observations_spdf@data$Species == "Pigeon", ]
+
+plot(buildings_spdf, col="light grey")
+# plot(roads_spdf, col="dark grey", add=TRUE)
+plot(myna_spdf, col="red", add=TRUE)
+plot(ibis_spdf, col="yellow", add=TRUE)
+plot(magpie_spdf, col="green", add=TRUE)
+plot(lor_spdf, col="orange", add=TRUE)
+plot(swal_spdf, col="light blue", add=TRUE)
+plot(crow_spdf, col="dark blue", add=TRUE)
+plot(pige_spdf, col="purple", add=TRUE)
+
 ```
+
+#Q5) Projecting data
+
+```{r projecting-buffering}
+# Project the data
+roads_proj <- spTransform(r_spdf, CRS( "+init=epsg:28356" ))
+observations_proj <- spTransform(observations_spdf, CRS( "+init=epsg:28356" ))
+buildings_proj <- spTransform(buildings_spdf, CRS( "+init=epsg:28356" ))
+paths_proj <- spTransform(p_spdf, CRS( "+init=epsg:28356" ))
+
+# Buffer the buildings
+buildings_buffer <- gBuffer(buildings_proj, width=15)
+
+# Plot the buffered buildings
+plot(buildings_buffer, col="pink", border="red")
+plot(buildings_proj, col="dark grey", border="black", add=TRUE) # Add buildings for context
+
+# Select the ibis observations
+Fibis = observations_proj[observations_proj@data$Species == "Ibis" &
+                            observations_spdf@data$behaviour == "Feeding", ]
+
+# Select those ibis observations in the buffered area
+selectedFibis <- Fibis[buildings_buffer, ]
+
+# Calculate the percentage
+nrow(selectedFibis) #84
+
+nrow(ibis) #174
+
+near_buildings <- 100 * nrow(selectedibis) / nrow(ibis)
+paste("Percentage of ibis near buildings = ", near_buildings, sep = "")
+
+#[1] "Percentage of ibis near buildings = 48.2758620689655"
+
+# Buffer the roads
+roads_buffer <- gBuffer(roads_proj, width=15)
+
+# Plot the buffered buildings
+plot(roads_buffer, col="pink", border="red")
+plot(roads_proj, col="dark grey", border="black", add=TRUE) # Add roads for context
+
+# Select those ibis observations in the buffered area
+selectedibis <- ibis[roads_buffer, ]
+
+# Calculate the percentage
+nrow(selectedibis) #38
+
+nrow(ibis) #174
+
+near_roads <- 100 * nrow(selectedibis) / nrow(ibis)
+paste("Percentage of ibis near buildings = ", near_roads, sep = "")
+
+#[1] "Percentage of ibis near roads = 22"
+
+# Buffer the paths
+paths_buffer <- gBuffer(paths_proj, width=15)
+
+# Plot the buffered buildings
+plot(paths_buffer, col="pink", border="red")
+plot(paths_proj, col="dark grey", border="black", add=TRUE) # Add paths for context
+
+# Select those ibis observations in the buffered area
+selectedibis <- ibis[paths_buffer, ]
+
+# Calculate the percentage
+nrow(selectedibis) #109
+
+nrow(ibis) #174
+
+near_paths <- 100 * nrow(selectedibis) / nrow(ibis)
+paste("Percentage of ibis near paths = ", near_paths, sep = "")
+
+#[1] "Percentage of ibis near paths = 62.6436781609195"
+```
+
 
